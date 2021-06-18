@@ -1,0 +1,60 @@
+﻿#pragma kernel Raytracer
+
+struct LightData {
+    float2 position;
+};
+
+struct CircleData {
+    float2 center;
+    float radius;
+};
+
+RWStructuredBuffer<LightData> lights;
+RWStructuredBuffer<CircleData> circles;
+RWTexture2D<float4> destTexture;
+
+int TestRaySphere(float2 p, float2 dir, float2 center, float radius)
+{
+        float2 m = p - center;
+        float b = dot(m, dir);
+        float c = dot(m, m) - radius * radius;
+
+        if(c > 0.0 && b > 0.0) return 0;
+
+        float disc = b * b - c;
+
+        if(disc < 0.0) return 0;
+
+        return 1;
+}
+
+[numthreads(32,32,1)]
+void Raytracer (uint3 id : SV_DispatchThreadID)
+{
+    for(int i = 0; i < lights.Length; i++)
+    {
+        float x1 = id.x;
+        float y1 = id.y;
+
+        float2 lightPos = lights[i].position;
+        float x2 = lightPos.x;
+        float y2 = lightPos.y;
+
+        float2 direction = float2(x2 - x1, y2 - y1);
+        float dist = sqrt(pow(direction.x, 2) + pow(direction.y, 2));
+        float2 directionNormalized = direction / dist;
+
+        for(int j = 0; j < circles.Length; j++)
+        {
+            CircleData circle = circles[i];   
+            int intersections = TestRaySphere(id.xy, directionNormalized, circle.center, circle.radius);
+    
+            if(intersections > 0)
+            {
+                destTexture[id.xy] = float4(0.0, 0.0, 0.0, 1.0);
+            } else {
+                destTexture[id.xy] = 1.0 - float4(dist, dist, dist, dist) / (1.5 * 1024.0);
+            }
+        }
+    }
+}

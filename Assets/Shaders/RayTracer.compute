@@ -9,16 +9,18 @@ struct CircleData {
     float radius;
 };
 
-struct Vertex {
+struct EdgeVertex {
     float2 position;
 };
+
+static int2 searchDirections[] = { int2(1, 0), int2(0, 1), int2(-1, 0), int2(0, -1) };
 
 RWStructuredBuffer<LightData> lights;
 RWStructuredBuffer<CircleData> circles;
 
 RWTexture2D<float4> destTexture;
 RWTexture2D<float2> edgePositionTexture;
-AppendStructuredBuffer<Vertex> vertices;
+AppendStructuredBuffer<EdgeVertex> edgeVertices;
 
 static float EPSILON = 0.00001;
 
@@ -114,30 +116,44 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
         if(intersections > 0)
         {
             //Find more accurate value rather than rounded off value
-            float dir = 0.0;
+            float2 dir = float2(0.0, 0.0);
             
-            if(TestRayBox(lightPos, float2(x1 + 1, y1), boxMin, boxMax) == 0)
+            if(TestRayBox(lightPos, float2(x1 + 1.0, y1), boxMin, boxMax) == 0)
             {
-                dir = 1.0;
+                dir.x = 1.0;
             } 
-            else if(TestRayBox(lightPos, float2(x1 - 1, y1), boxMin, boxMax) == 0)
+            else if(TestRayBox(lightPos, float2(x1 - 1.0, y1), boxMin, boxMax) == 0)
             {
-                dir = -1.0;
+                dir.x = -1.0;
+            }
+            else if(TestRayBox(lightPos, float2(x1, y1 + 1.0), boxMin, boxMax) == 0)
+            {
+                dir.y = 1.0;
+            }
+            else if(TestRayBox(lightPos, float2(x1, y1 - 1.0), boxMin, boxMax) == 0)
+            {                
+                dir.y = -1.0;
             }
 
-            bool intersecting = true; 
-            float stepSize = 0.01;
-            float steps = 0.0;
-            while(intersecting && steps < 100.0)
+            if(abs(dir.x) > 0.0 || abs(dir.y) > 0.0)
             {
-                steps += 1.0;
-                intersecting = TestRayBox(lightPos, float2(x1 + stepSize * steps * dir, y1), boxMin, boxMax) > 0;
-            }
+                bool intersecting = true; 
+                float stepSize = 0.01;
+                float steps = 0.0;
+                while(intersecting && steps < 100.0)
+                {
+                    steps += 1.0;
+                    intersecting = TestRayBox(lightPos, float2(x1 + stepSize * steps * dir.x, y1 + stepSize * steps * dir.y), boxMin, boxMax) > 0;
+                }
 
-            if(steps < 100.0)
-            {
-                float2 edgePoint = float2(x1 + stepSize * steps * dir, y1);
-                edgePositionTexture[id.xy] = edgePoint;
+                if(intersecting == false)
+                {
+                    float2 vertex = float2(x1 + stepSize * steps * dir.x, y1 + stepSize * steps * dir.y);
+
+                    EdgeVertex v;
+                    v.position = vertex;
+                    edgeVertices.Append(v);
+                }
             }
         }
     }
@@ -149,6 +165,5 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
     else 
     {
         destTexture[id.xy] = float4(0.75, 0.75, 0.75, 1.0);// - float4(dist, dist, dist, dist) / (1.5 * 1024.0);
-        edgePositionTexture[id.xy] = float2(0.0, 0.0);
     }
 }

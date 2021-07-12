@@ -16,9 +16,9 @@ public class Raytracer : MonoBehaviour
     private ComputeBuffer lightBuffer;
     private ComputeBuffer circleBuffer;
     private ComputeBuffer edgeVertexBuffer;
-    private ComputeBuffer optimizedEdgeVertexBuffer;
 
-    private List<EdgeVertex> v;
+    private List<EdgeVertex> edgeVertices;
+    private List<EdgeVertex> corners;
 
     private int raytracerKI;
     private int edgeDetectionKI;
@@ -71,9 +71,8 @@ public class Raytracer : MonoBehaviour
         Graphics.Blit(destTexture, dest);
     }
 
-    void Update()
+    private void SetRaytracingBuffers()
     {
-        //Raytracing
         LightData[] lightDataArray = this.sceneGeometry.GetLightDataArray();
         lightBuffer = new ComputeBuffer(lightDataArray.Length, lightDataArray.Length * 2 * sizeof(float));
         lightBuffer.SetData(lightDataArray);
@@ -84,12 +83,112 @@ public class Raytracer : MonoBehaviour
         circleBuffer.SetData(circleDataArray);
         computeShader.SetBuffer(raytracerKI, "circles", circleBuffer);
 
-        ComputeBuffer verticesBuffer = new ComputeBuffer(2000, 2 * sizeof(float), ComputeBufferType.Append);
-        verticesBuffer.SetCounterValue(0);
-        computeShader.SetBuffer(raytracerKI, "vertices", verticesBuffer);
+        edgeVertexBuffer = new ComputeBuffer(20000, 2 * sizeof(float), ComputeBufferType.Append);
+        edgeVertexBuffer.SetCounterValue(0);
+        computeShader.SetBuffer(raytracerKI, "edgeVertices", edgeVertexBuffer);
+    }
 
+    private EdgeVertex[] GetEdgeVertices()
+    {
+        int edgeVertexCount = this.GetAppendBufferCount(edgeVertexBuffer);
+        EdgeVertex[] edgeVertices = new EdgeVertex[edgeVertexCount];
+        edgeVertexBuffer.GetData(edgeVertices);
+
+        Debug.Log("Edge vertex count= " + edgeVertexCount);
+
+        return edgeVertices;
+    }
+
+    private List<EdgeVertex> SortEdgeVerticesByAngle()
+    {
+        //Calculate centroid
+        Vector2 centroid = new Vector2(0, 0);
+        float verticesCount = (float)edgeVertices.Count;
+
+        for (var i = 0; i < edgeVertices.Count; i++)
+        {
+            centroid.x += edgeVertices[i].position.x / verticesCount;
+            centroid.y += edgeVertices[i].position.y / verticesCount;
+        }
+
+        //Order by angle to centroid
+        edgeVertices = edgeVertices.OrderBy(v =>
+        {
+            Vector2 distToCenter = v.position - centroid;
+            float angleToCenter = Mathf.Atan2(distToCenter.y, distToCenter.x) + 2 * Mathf.PI % (2 * Mathf.PI);
+            return angleToCenter;
+        }).ToList();
+
+        return edgeVertices;
+    }
+
+    private List<EdgeVertex> FindCorners()
+    {
+        List<EdgeVertex> corners = new List<EdgeVertex>();
+        var lastSlope = 0f;
+
+        for (var i = 1; i < edgeVertices.Count; i++)
+        {
+            var lastPos = new Vector2(edgeVertices[i - 1].position.x, edgeVertices[i - 1].position.y);
+            var curPos = new Vector2(edgeVertices[i].position.x, edgeVertices[i].position.y);
+
+            var slope = (curPos.y - lastPos.y) / (curPos.x - lastPos.x);
+            var deltaSlope = lastSlope - slope;
+
+            if (Mathf.Abs(deltaSlope) > 1f)
+            {
+                corners.Add(edgeVertices[i - 1]);
+            }
+
+            lastSlope = slope;
+        }
+
+        return corners;
+    }
+
+    void Update()
+    {
+        SetRaytracingBuffers();
         computeShader.Dispatch(raytracerKI, textureResolution / 32, textureResolution / 32, 1);
 
+        edgeVertices = GetEdgeVertices().ToList();
+        edgeVertices = SortEdgeVerticesByAngle();
+
+        corners = FindCorners();
+
+        ReleaseBuffers();
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (edgeVertices == null)
+            return;
+
+        for (var i = 1; i < edgeVertices.Count; i++)
+        {
+            var lastPos = new Vector2(edgeVertices[i - 1].position.x, edgeVertices[i - 1].position.y);
+            var curPos = new Vector2(edgeVertices[i].position.x, edgeVertices[i].position.y);
+
+            Gizmos.DrawLine(spaceConverter.TextureToWorldSpace(lastPos), spaceConverter.TextureToWorldSpace(curPos));
+        }
+
+        for (var i = 1; i < corners.Count; i++)
+        {
+            Gizmos.DrawSphere(spaceConverter.TextureToWorldSpace(corners[i].position), 0.1f);
+            //Gizmos.DrawLine(spaceConverter.TextureToWorldSpace(corners[i - 1].position), spaceConverter.TextureToWorldSpace(corners[i].position));
+        }
+    }
+
+    private void ReleaseBuffers()
+    {
+        circleBuffer.Release();
+        lightBuffer.Release();
+        edgeVertexBuffer.Release();
+    }
+
+    private void RefactorThis()
+    {
+        /*
         //Edge detection
         edgeVertexBuffer = new ComputeBuffer(2000, 5 * sizeof(float) + 6 * sizeof(int), ComputeBufferType.Append);
         edgeVertexBuffer.SetCounterValue(0);
@@ -97,20 +196,11 @@ public class Raytracer : MonoBehaviour
 
         edgeDetection.Dispatch(edgeDetectionKI, textureResolution / 32, textureResolution / 32, 1);
 
-
         int edgeVertexCount = this.GetAppendBufferCount(edgeVertexBuffer);
         EdgeVertex[] shadowVertices = new EdgeVertex[edgeVertexCount];
         edgeVertexBuffer.GetData(shadowVertices);
 
         v = shadowVertices.ToList();
-
-        var centroid = new Vector2(0, 0);
-
-        for (var i = 0; i < v.Count; i++)
-        {
-            centroid.x += (float)v[i].position.x / (float)v.Count;
-            centroid.y += (float)v[i].position.y / (float)v.Count;
-        }
 
         //Optimize edges
         optimizeEdges.SetBuffer(optimizeEdgesKI, "edgeVertices", edgeVertexBuffer);
@@ -138,7 +228,6 @@ public class Raytracer : MonoBehaviour
                 corners.Add(v[i - 1]);
             }
 
-            Debug.DrawLine(spaceConverter.TextureToWorldSpace(new Vector2(v[i - 1].position.x, v[i - 1].position.y)), spaceConverter.TextureToWorldSpace(new Vector2(v[i].position.x, v[i].position.y)), Color.red, Time.deltaTime);
             Debug.DrawLine(spaceConverter.TextureToWorldSpace(lastAccPos), spaceConverter.TextureToWorldSpace(curAccPos), Color.green, Time.deltaTime);
 
             lastSlope = slope;
@@ -152,19 +241,19 @@ public class Raytracer : MonoBehaviour
         circleBuffer.Release();
         lightBuffer.Release();
         edgeVertexBuffer.Release();
-        verticesBuffer.Release();
+        //verticesBuffer.Release();*/
     }
 
     public void saveCSV()
     {
         using (var w = new StreamWriter("./test.csv"))
         {
-            for (var i = 1; i < v.Count; i++)
+            for (var i = 1; i < edgeVertices.Count; i++)
             {
-                var deltaSlope = v[i].slope - v[i - 1].slope;
-                var line = string.Format("{0},{1},{2}", i, v[i].slope, deltaSlope);
-                w.WriteLine(line);
-                w.Flush();
+                //var deltaSlope = v[i].slope - v[i - 1].slope;
+                //var line = string.Format("{0},{1},{2}", i, v[i].slope, deltaSlope);
+                //w.WriteLine(line);
+                //w.Flush();
             }
         }
 

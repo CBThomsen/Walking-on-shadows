@@ -16,11 +16,11 @@ public struct LightData
 
 public struct EdgeVertex
 {
-    public Vector2Int position;
-    public Vector2Int neighbourA;
+    public Vector2 position;
+    /*public Vector2Int neighbourA;
     public Vector2Int neighbourB;
     public float slope;
-    public Vector4 debugstuff;
+    public Vector4 debugstuff;*/
 }
 
 public class SceneGeometry : MonoBehaviour

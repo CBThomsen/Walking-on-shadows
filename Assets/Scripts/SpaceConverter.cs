@@ -3,7 +3,7 @@ using UnityEngine;
 public class SpaceConverter : MonoBehaviour
 {
     public Camera cam;
-    private int textureResolution = 128;
+    private int textureResolution = 1024;
 
     void Awake()
     {

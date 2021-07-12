@@ -70,7 +70,7 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
 {
     int intersections = 0;
 
-    /*for(int i = 0; i < lights.Length; i++)
+    for(int i = 0; i < lights.Length; i++)
     {
         float x1 = id.x;
         float y1 = id.y;
@@ -78,25 +78,7 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
         float2 lightPos = lights[i].position;
         float x2 = lightPos.x;
         float y2 = lightPos.y;
-
-        float2 direction = float2(x2 - x1, y2 - y1);
-        float dist = sqrt(pow(direction.x, 2) + pow(direction.y, 2));
-        float2 directionNormalized = direction / dist;
-
-        for(int j = 0; j < circles.Length; j++)
-        {
-            CircleData circle = circles[j];   
-            intersections += TestRaySphere(id.xy, directionNormalized, circle.center, circle.radius);
-
-            if(intersections > 0)
-            {
-                Vertex v;
-                v.position = id.xy;
-                v.lightDirection = -directionNormalized;
-                vertices[id.x + id.y] = v;
-            }
-        }
-    }*/
+    }
 
     float2 boxCenter = float2(56.0, 56.0);
     float2 extents = float2(15.0, 15.0);
@@ -111,6 +93,20 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
         float2 lightPos = lights[i].position;
         float x2 = lightPos.x;
         float y2 = lightPos.y;
+        
+        float2 direction = float2(x2 - x1, y2 - y1);
+        float dist = sqrt(pow(direction.x, 2) + pow(direction.y, 2));
+        float2 directionNormalized = direction / dist;
+
+        for(int j = 0; j < circles.Length; j++)
+        {
+            CircleData circle = circles[j];   
+            //intersections += TestRaySphere(id.xy, directionNormalized, circle.center, circle.radius);
+
+            if(intersections > 0)
+            {
+            }
+        }
 
         intersections += TestRayBox(lightPos, float2(x1, y1), boxMin, boxMax);
 
@@ -127,7 +123,8 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
             {
                 dir.x = -1.0;
             }
-            else if(TestRayBox(lightPos, float2(x1, y1 + 1.0), boxMin, boxMax) == 0)
+
+            if(TestRayBox(lightPos, float2(x1, y1 + 1.0), boxMin, boxMax) == 0)
             {
                 dir.y = 1.0;
             }
@@ -139,7 +136,7 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
             if(abs(dir.x) > 0.0 || abs(dir.y) > 0.0)
             {
                 bool intersecting = true; 
-                float stepSize = 0.01;
+                float stepSize = 0.001;
                 float steps = 0.0;
 
                 while(intersecting == true && steps < 1000.0)
@@ -148,15 +145,12 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
                     intersecting = TestRayBox(lightPos, float2(x1 + stepSize * steps * dir.x, y1 + stepSize * steps * dir.y), boxMin, boxMax) > 0;
                 }
 
-                if(intersecting == false)
-                {
-                    float2 vertex = float2(x1 + stepSize * steps * dir.x, y1 + stepSize * steps * dir.y);
+                float2 vertex = float2(x1 + stepSize * steps * dir.x, y1 + stepSize * steps * dir.y);
 
-                    EdgeVertex v;
-                    v.position = vertex;
-                    v.roundedPos = float2(x1, y1);
-                    edgeVertices.Append(v);
-                }
+                EdgeVertex v;
+                v.position = vertex;
+                v.roundedPos = float2(x1, y1);
+                edgeVertices.Append(v);
             }
         }
     }

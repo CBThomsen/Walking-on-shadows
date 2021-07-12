@@ -29,7 +29,7 @@ public class Raytracer : MonoBehaviour
     private float cpuTimer = 0f;
     private float cpuFPS = 1f;
 
-    private int textureResolution = 128;
+    private int textureResolution = 1024;
 
     void Start()
     {
@@ -123,20 +123,19 @@ public class Raytracer : MonoBehaviour
     private List<EdgeVertex> FindCorners()
     {
         List<EdgeVertex> corners = new List<EdgeVertex>();
-        var lastAngle = 0f;
+        float lastAngle = 0f;
 
-        for (var i = 1; i < edgeVertices.Count; i++)
+        for (var i = 1; i < edgeVertices.Count + 1; i++)
         {
             Vector2 lastPos = new Vector2(edgeVertices[i - 1].position.x, edgeVertices[i - 1].position.y);
-            Vector2 curPos = new Vector2(edgeVertices[i].position.x, edgeVertices[i].position.y);
+            Vector2 curPos = new Vector2(edgeVertices[i % (edgeVertices.Count - 1)].position.x, edgeVertices[i % (edgeVertices.Count - 1)].position.y);
 
             Vector2 deltaPos = curPos - lastPos;
             float angle = Mathf.Atan2(deltaPos.y, deltaPos.x);
 
-
             var deltaAngle = lastAngle - angle;
 
-            Debug.Log("i = " + i + " angle = " + angle + " pos = " + curPos.x + ", " + curPos.y + " roundedPos = " + edgeVertices[i].roundedPosition + " change in angle = " + deltaAngle);
+            //Debug.Log("i = " + i + " angle = " + angle + " pos = " + curPos.x + ", " + curPos.y + " roundedPos = " + edgeVertices[i].roundedPosition + " change in angle = " + deltaAngle);
 
             if (Mathf.Abs(deltaAngle) * 180 / Mathf.PI > 1f)
             {
@@ -159,6 +158,11 @@ public class Raytracer : MonoBehaviour
 
         corners = FindCorners();
 
+        for (var i = 1; i < corners.Count; i++)
+        {
+            Debug.DrawLine(spaceConverter.TextureToWorldSpace(corners[i - 1].position), spaceConverter.TextureToWorldSpace(corners[i].position), Color.magenta, Time.deltaTime);
+        }
+
         ReleaseBuffers();
     }
 
@@ -180,8 +184,11 @@ public class Raytracer : MonoBehaviour
         for (var i = 1; i < corners.Count; i++)
         {
             Gizmos.DrawSphere(spaceConverter.TextureToWorldSpace(corners[i].position), 0.1f);
-            Gizmos.DrawLine(spaceConverter.TextureToWorldSpace(corners[i - 1].position), spaceConverter.TextureToWorldSpace(corners[i].position));
+            //Gizmos.DrawLine(spaceConverter.TextureToWorldSpace(corners[i - 1].position), spaceConverter.TextureToWorldSpace(corners[i].position));
         }
+
+        Gizmos.DrawLine(spaceConverter.TextureToWorldSpace(corners[corners.Count - 1].position), spaceConverter.TextureToWorldSpace(corners[0].position));
+
     }
 
     private void ReleaseBuffers()
@@ -197,10 +204,15 @@ public class Raytracer : MonoBehaviour
         {
             for (var i = 1; i < edgeVertices.Count; i++)
             {
-                //var deltaSlope = v[i].slope - v[i - 1].slope;
-                //var line = string.Format("{0},{1},{2}", i, v[i].slope, deltaSlope);
-                //w.WriteLine(line);
-                //w.Flush();
+                Vector2 lastPos = new Vector2(edgeVertices[i - 1].position.x, edgeVertices[i - 1].position.y);
+                Vector2 curPos = new Vector2(edgeVertices[i].position.x, edgeVertices[i].position.y);
+
+                Vector2 deltaPos = curPos - lastPos;
+                float angle = Mathf.Atan2(deltaPos.y, deltaPos.x);
+
+                var line = string.Format("{0},{1},{2},{3}", i, angle, deltaPos.x, deltaPos.y);
+                w.WriteLine(line);
+                w.Flush();
             }
         }
 

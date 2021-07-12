@@ -14,6 +14,15 @@ public struct LightData
     public Vector2 position;
 }
 
+public struct EdgeVertex
+{
+    public Vector2Int position;
+    public Vector2Int neighbourA;
+    public Vector2Int neighbourB;
+    public float slope;
+    public Vector4 debugstuff;
+}
+
 public class SceneGeometry : MonoBehaviour
 {
     public SpaceConverter spaceConverter;
@@ -24,23 +33,12 @@ public class SceneGeometry : MonoBehaviour
     private CircleData[] circleData;
     private LightData[] lightData;
 
-    private float textureResolution = 1024f;
-
     void Awake()
     {
         sceneLights = GameObject.FindGameObjectsWithTag("Light");
 
         lightData = new LightData[sceneLights.Length];
         circleData = new CircleData[sceneCircles.Length];
-
-        for (var i = 0; i < sceneLights.Length; i++)
-        {
-            lightData[i].position = sceneLights[i].transform.position;
-            Debug.Log("Light positions:");
-            Debug.Log("World:" + lightData[i].position);
-            //Debug.Log("Normalized: " + cam.WorldToViewportPoint(sceneLights[i].transform.position));
-            //Debug.Log("Screen: " + cam.WorldToScreenPoint(sceneLights[i].transform.position));
-        }
     }
 
     public LightData[] GetLightDataArray()
@@ -62,12 +60,12 @@ public class SceneGeometry : MonoBehaviour
             //lightData[i].position = cam.WorldToViewportPoint(sceneLights[i].transform.position);
         }
 
-        for (var i = 0; i < sceneCircles.Length; i++)
+        for (var j = 0; j < sceneCircles.Length; j++)
         {
             //circleData[i].center = cam.WorldToViewportPoint(sceneCircles[i].transform.position);
 
-            circleData[i].center = spaceConverter.WorldToTextureSpace(sceneLights[i].transform.position);
-            circleData[i].radius = 0.1f * 1024f;
+            circleData[j].center = spaceConverter.WorldToTextureSpace(sceneCircles[j].transform.position);
+            circleData[j].radius = spaceConverter.WorldToTextureSpace(new Vector2(sceneCircles[j].transform.position.x + sceneCircles[j].radius, 0)).x - circleData[j].center.x;
         }
     }
 

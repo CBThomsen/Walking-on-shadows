@@ -1,0 +1,130 @@
+#pragma kernel OptimizeEdges
+
+struct EdgeVertex {
+    int2 position;
+    int2 neighbourA;
+    int2 neighbourB;
+    float slope;
+    float4 debugstuff;
+};
+
+float2 center;
+RWStructuredBuffer<EdgeVertex> edgeVertices;
+RWTexture2D<float4> inputTexture;
+RWTexture2D<float2> edgePositionTexture;
+
+static const float PI = 3.14159265;
+static int2 searchDirections[] = { int2(1, 0), int2(1, 1), int2(0, 1), int2(-1, 1), int2(-1, 0), int2(-1, -1),  int2(0, -1), int2(1, -1) };
+
+bool IsEdge(uint x, uint y)
+{
+    if(inputTexture[uint2(x, y)].x < 0.1 && inputTexture[uint2(x - 1, y)].x > 0.1)
+        return true;
+
+    if(inputTexture[uint2(x, y)].x < 0.1 && inputTexture[uint2(x + 1, y)].x > 0.1)
+        return true;
+        
+    if(inputTexture[uint2(x, y)].x < 0.1 && inputTexture[uint2(x, y - 1)].x > 0.1)
+        return true;
+
+    if(inputTexture[uint2(x, y)].x < 0.1 && inputTexture[uint2(x , y + 1)].x > 0.1)
+        return true;
+
+    return false;
+}
+
+[numthreads(32,1,1)]
+void OptimizeEdges(uint3 id : SV_DispatchThreadID)
+{
+
+    float2 distToCenter = float2(edgeVertices[id.x].position) - center;
+    float angleToCenter = fmod(atan2(distToCenter.y, distToCenter.x) + 2 * PI, 2 * PI);
+
+    float2 distToCenterA = float2(edgeVertices[id.x].neighbourA) - center;
+    float angleToCenterA = fmod(atan2(distToCenterA.y, distToCenterA.x) + 2 * PI, 2 * PI);
+    
+    float2 distToCenterB = float2(edgeVertices[id.x].neighbourB) - center;
+    float angleToCenterB = fmod(atan2(distToCenterB.y, distToCenterB.x) + 2 * PI, 2 * PI);
+
+    uint sampleSize = 2;
+    float2 neighbours[2];
+    uint neighbourIndex = 0;
+    uint iterations = 0;
+    uint failIterations = 0;
+    uint directionIndex = 0;
+
+    int x;
+    int y;
+    float lastAngleToCenter;
+
+    //Use neighbour with lowest angle so slope is CCW
+    if(angleToCenterA < angleToCenterB)
+    {
+        x = edgeVertices[id.x].neighbourA.x;
+        y = edgeVertices[id.x].neighbourA.y;
+        lastAngleToCenter = angleToCenterA;
+    } else {
+        x = edgeVertices[id.x].neighbourB.x;
+        y = edgeVertices[id.x].neighbourB.y;
+        lastAngleToCenter = angleToCenterB;
+    }
+    
+    while(iterations < sampleSize && failIterations < 10)
+    {
+        int2 dir = searchDirections[directionIndex];
+        float testX = x + dir.x;
+        float testY = y + dir.y;
+
+        float2 distToCenter = float2(testX, testY) - center;
+        float angleToCenter = fmod(atan2(distToCenter.y, distToCenter.x) + 2 * PI, 2 * PI);
+
+        //If a neighbour is more than 180 degrees apart assume it's the case where a vert at 0 degrees, has a neighbour at 2*PI
+        if(abs(angleToCenter - lastAngleToCenter) > PI)
+        {
+            angleToCenter -= 2 * PI;
+        }
+        
+        if(angleToCenter < lastAngleToCenter && IsEdge(testX, testY))
+        {
+            x = testX;
+            y = testY;
+            lastAngleToCenter = angleToCenter;
+
+            iterations += 1;
+            neighbours[neighbourIndex] = edgePositionTexture[uint2(testX, testY)];
+            neighbourIndex += 1;
+            failIterations = 0;
+        } else {
+            directionIndex += 1;
+
+            if(directionIndex > searchDirections.Length - 1)
+                directionIndex = 0;
+
+            failIterations += 1;
+        }
+    }
+
+    //Having adjacent points on the edge calculate the slope with linear regression
+
+    float2 sums;// = float2(0.0, 0.0);
+    float covSum;
+    float2 sumsSqr;
+    float neighbourCount = float(neighbourIndex);
+
+    for(uint j = 0; j < neighbourIndex; j++)
+    {
+        sums.x += neighbours[j].x;
+        sums.y += neighbours[j].y;
+        sumsSqr.x += neighbours[j].x * neighbours[j].x;
+        sumsSqr.y += neighbours[j].y * neighbours[j].y;
+        covSum += neighbours[j].x * neighbours[j].y;
+    }
+
+    float slope = (neighbourCount * covSum - sums.x * sums.y) / (neighbourCount * sumsSqr.x - sums.x * sums.x);
+
+    edgeVertices[id.x].slope = slope;
+    edgeVertices[id.x].debugstuff.x = angleToCenter;
+    edgeVertices[id.x].debugstuff.y = neighbourIndex;
+    edgeVertices[id.x].debugstuff.z = edgePositionTexture[edgeVertices[id.x].position].x;
+    edgeVertices[id.x].debugstuff.w = edgePositionTexture[edgeVertices[id.x].position].y;
+}

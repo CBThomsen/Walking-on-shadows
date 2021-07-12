@@ -11,6 +11,7 @@ struct CircleData {
 
 struct EdgeVertex {
     float2 position;
+    float2 roundedPos;
 };
 
 static int2 searchDirections[] = { int2(1, 0), int2(0, 1), int2(-1, 0), int2(0, -1) };
@@ -140,7 +141,8 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
                 bool intersecting = true; 
                 float stepSize = 0.01;
                 float steps = 0.0;
-                while(intersecting && steps < 100.0)
+
+                while(intersecting == true && steps < 1000.0)
                 {
                     steps += 1.0;
                     intersecting = TestRayBox(lightPos, float2(x1 + stepSize * steps * dir.x, y1 + stepSize * steps * dir.y), boxMin, boxMax) > 0;
@@ -152,6 +154,7 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
 
                     EdgeVertex v;
                     v.position = vertex;
+                    v.roundedPos = float2(x1, y1);
                     edgeVertices.Append(v);
                 }
             }

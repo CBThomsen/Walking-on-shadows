@@ -17,6 +17,7 @@ public struct LightData
 public struct EdgeVertex
 {
     public Vector2 position;
+    public Vector2 roundedPosition;
     /*public Vector2Int neighbourA;
     public Vector2Int neighbourB;
     public float slope;

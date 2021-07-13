@@ -9,6 +9,12 @@ public struct CircleData
     public float radius;
 }
 
+public struct BoxData
+{
+    public Vector2 center;
+    public Vector2 extents;
+}
+
 public struct LightData
 {
     public Vector2 position;
@@ -18,10 +24,7 @@ public struct EdgeVertex
 {
     public Vector2 position;
     public Vector2 roundedPosition;
-    /*public Vector2Int neighbourA;
-    public Vector2Int neighbourB;
-    public float slope;
-    public Vector4 debugstuff;*/
+    public int shapeIndex;
 }
 
 public class SceneGeometry : MonoBehaviour
@@ -30,8 +33,10 @@ public class SceneGeometry : MonoBehaviour
 
     public GameObject[] sceneLights;
     public CircleCollider2D[] sceneCircles;
+    public BoxCollider2D[] sceneBoxes;
 
     private CircleData[] circleData;
+    private BoxData[] boxData;
     private LightData[] lightData;
 
     void Awake()
@@ -40,6 +45,7 @@ public class SceneGeometry : MonoBehaviour
 
         lightData = new LightData[sceneLights.Length];
         circleData = new CircleData[sceneCircles.Length];
+        boxData = new BoxData[sceneBoxes.Length];
     }
 
     public LightData[] GetLightDataArray()
@@ -50,6 +56,11 @@ public class SceneGeometry : MonoBehaviour
     public CircleData[] GetCircleDatas()
     {
         return circleData;
+    }
+
+    public BoxData[] GetBoxDatas()
+    {
+        return boxData;
     }
 
     private void Update()
@@ -67,6 +78,16 @@ public class SceneGeometry : MonoBehaviour
 
             circleData[j].center = spaceConverter.WorldToTextureSpace(sceneCircles[j].transform.position);
             circleData[j].radius = spaceConverter.WorldToTextureSpace(new Vector2(sceneCircles[j].transform.position.x + sceneCircles[j].radius, 0)).x - circleData[j].center.x;
+        }
+
+        for (var j = 0; j < sceneBoxes.Length; j++)
+        {
+            //circleData[i].center = cam.WorldToViewportPoint(sceneCircles[i].transform.position);
+
+            boxData[j].center = spaceConverter.WorldToTextureSpace(sceneBoxes[j].transform.position);
+
+            var boxMax = (Vector2)sceneBoxes[j].transform.position + sceneBoxes[j].size * 0.5f;
+            boxData[j].extents = spaceConverter.WorldToTextureSpace(boxMax) - boxData[j].center;
         }
     }
 

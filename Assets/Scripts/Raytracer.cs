@@ -15,10 +15,12 @@ public class Raytracer : MonoBehaviour
 
     private ComputeBuffer lightBuffer;
     private ComputeBuffer circleBuffer;
+    private ComputeBuffer boxBuffer;
     private ComputeBuffer edgeVertexBuffer;
 
     private List<EdgeVertex> edgeVertices;
-    private List<EdgeVertex> corners;
+
+    private List<List<EdgeVertex>> shapeEdgeVertices;
 
     private int raytracerKI;
     private int edgeDetectionKI;
@@ -83,7 +85,12 @@ public class Raytracer : MonoBehaviour
         circleBuffer.SetData(circleDataArray);
         computeShader.SetBuffer(raytracerKI, "circles", circleBuffer);
 
-        edgeVertexBuffer = new ComputeBuffer(2000, 4 * sizeof(float), ComputeBufferType.Append);
+        BoxData[] boxDataArray = this.sceneGeometry.GetBoxDatas();
+        boxBuffer = new ComputeBuffer(boxDataArray.Length, boxDataArray.Length * 4 * sizeof(float));
+        boxBuffer.SetData(boxDataArray);
+        computeShader.SetBuffer(raytracerKI, "boxes", boxBuffer);
+
+        edgeVertexBuffer = new ComputeBuffer(20000, 4 * sizeof(float) + sizeof(int), ComputeBufferType.Append);
         edgeVertexBuffer.SetCounterValue(0);
         computeShader.SetBuffer(raytracerKI, "edgeVertices", edgeVertexBuffer);
     }
@@ -97,38 +104,54 @@ public class Raytracer : MonoBehaviour
         return edgeVertices;
     }
 
-    private List<EdgeVertex> SortEdgeVerticesByAngle()
+    private List<List<EdgeVertex>> SortEdgeVerticesByAngle()
     {
-        //Calculate centroid
-        Vector2 centroid = new Vector2(0, 0);
-        float verticesCount = (float)edgeVertices.Count;
+        List<Vector2> centroids = new List<Vector2>();
+        shapeEdgeVertices = new List<List<EdgeVertex>>();
 
+        //Calculate centroids for each shape
         for (var i = 0; i < edgeVertices.Count; i++)
         {
-            centroid.x += edgeVertices[i].position.x / verticesCount;
-            centroid.y += edgeVertices[i].position.y / verticesCount;
+            int shapeIndex = edgeVertices[i].shapeIndex;
+
+            while (shapeIndex > centroids.Count - 1)
+            {
+                centroids.Add(new Vector2(0f, 0f));
+                shapeEdgeVertices.Add(new List<EdgeVertex>());
+            }
+
+            Vector2 c = centroids[shapeIndex];
+            c += edgeVertices[i].position;
+
+            centroids[shapeIndex] = c;
+            shapeEdgeVertices[shapeIndex].Add(edgeVertices[i]);
         }
 
-        //Order by angle to centroid
-        edgeVertices = edgeVertices.OrderBy(v =>
+        for (var j = 0; j < shapeEdgeVertices.Count; j++)
         {
-            Vector2 distToCenter = v.position - centroid;
-            float angleToCenter = Mathf.Atan2(distToCenter.y, distToCenter.x) + 2 * Mathf.PI % (2 * Mathf.PI);
-            return angleToCenter;
-        }).ToList();
+            Vector2 centroid = centroids[j] / (float)shapeEdgeVertices[j].Count;
 
-        return edgeVertices;
+            //Order by angle to centroid
+            shapeEdgeVertices[j] = shapeEdgeVertices[j].OrderBy(v =>
+            {
+                Vector2 distToCenter = v.position - centroid;
+                float angleToCenter = Mathf.Atan2(distToCenter.y, distToCenter.x) + 2 * Mathf.PI % (2 * Mathf.PI);
+                return angleToCenter;
+            }).ToList();
+        }
+
+        return shapeEdgeVertices;
     }
 
-    private List<EdgeVertex> FindCorners()
+    private List<EdgeVertex> FindCorners(List<EdgeVertex> ev)
     {
         List<EdgeVertex> corners = new List<EdgeVertex>();
         float lastAngle = 0f;
 
-        for (var i = 1; i < edgeVertices.Count + 1; i++)
+        for (var i = 1; i < ev.Count + 1; i++)
         {
-            Vector2 lastPos = new Vector2(edgeVertices[i - 1].position.x, edgeVertices[i - 1].position.y);
-            Vector2 curPos = new Vector2(edgeVertices[i % (edgeVertices.Count - 1)].position.x, edgeVertices[i % (edgeVertices.Count - 1)].position.y);
+            Vector2 lastPos = new Vector2(ev[i - 1].position.x, ev[i - 1].position.y);
+            Vector2 curPos = new Vector2(ev[i % (ev.Count - 1)].position.x, ev[i % (ev.Count - 1)].position.y);
 
             Vector2 deltaPos = curPos - lastPos;
             float angle = Mathf.Atan2(deltaPos.y, deltaPos.x);
@@ -139,7 +162,7 @@ public class Raytracer : MonoBehaviour
 
             if (Mathf.Abs(deltaAngle) * 180 / Mathf.PI > 1f)
             {
-                corners.Add(edgeVertices[i - 1]);
+                corners.Add(ev[i - 1]);
             }
 
             lastAngle = angle;
@@ -154,20 +177,28 @@ public class Raytracer : MonoBehaviour
         computeShader.Dispatch(raytracerKI, textureResolution / 32, textureResolution / 32, 1);
 
         edgeVertices = GetEdgeVertices().ToList();
-        edgeVertices = SortEdgeVerticesByAngle();
+        shapeEdgeVertices = SortEdgeVerticesByAngle();
 
-        corners = FindCorners();
-
-        for (var i = 1; i < corners.Count; i++)
+        shapeEdgeVertices.ForEach(ev =>
         {
-            Debug.DrawLine(spaceConverter.TextureToWorldSpace(corners[i - 1].position), spaceConverter.TextureToWorldSpace(corners[i].position), Color.magenta, Time.deltaTime);
-        }
+            List<EdgeVertex> corners = FindCorners(ev);
+
+            for (var i = 1; i < corners.Count; i++)
+            {
+                Debug.DrawLine(spaceConverter.TextureToWorldSpace(corners[i - 1].position), spaceConverter.TextureToWorldSpace(corners[i].position), Color.magenta, Time.deltaTime);
+            }
+
+            Debug.DrawLine(spaceConverter.TextureToWorldSpace(corners[0].position), spaceConverter.TextureToWorldSpace(corners[corners.Count - 1].position), Color.magenta, Time.deltaTime);
+
+        });
 
         ReleaseBuffers();
     }
 
     private void OnDrawGizmos()
     {
+        return;
+
         if (edgeVertices == null)
             return;
 
@@ -178,16 +209,14 @@ public class Raytracer : MonoBehaviour
 
             //Gizmos.DrawLine(spaceConverter.TextureToWorldSpace(lastPos), spaceConverter.TextureToWorldSpace(curPos));
         }
+        /*
+            for (var i = 1; i < corners.Count; i++)
+            {
+                //Gizmos.DrawLine(spaceConverter.TextureToWorldSpace(corners[i - 1].position), spaceConverter.TextureToWorldSpace(corners[i].position));
+            }
 
-        Debug.Log(corners.Count);
-
-        for (var i = 1; i < corners.Count; i++)
-        {
-            Gizmos.DrawSphere(spaceConverter.TextureToWorldSpace(corners[i].position), 0.1f);
-            //Gizmos.DrawLine(spaceConverter.TextureToWorldSpace(corners[i - 1].position), spaceConverter.TextureToWorldSpace(corners[i].position));
-        }
-
-        Gizmos.DrawLine(spaceConverter.TextureToWorldSpace(corners[corners.Count - 1].position), spaceConverter.TextureToWorldSpace(corners[0].position));
+            Gizmos.DrawLine(spaceConverter.TextureToWorldSpace(corners[corners.Count - 1].position), spaceConverter.TextureToWorldSpace(corners[0].position));
+            */
 
     }
 

@@ -9,15 +9,22 @@ struct CircleData {
     float radius;
 };
 
+struct BoxData {
+    float2 center;
+    float2 extents;
+};
+
 struct EdgeVertex {
     float2 position;
     float2 roundedPos;
+    int shapeIndex;
 };
 
 static int2 searchDirections[] = { int2(1, 0), int2(0, 1), int2(-1, 0), int2(0, -1) };
 
 RWStructuredBuffer<LightData> lights;
 RWStructuredBuffer<CircleData> circles;
+RWStructuredBuffer<BoxData> boxes;
 
 RWTexture2D<float4> destTexture;
 RWTexture2D<float2> edgePositionTexture;
@@ -69,6 +76,7 @@ int TestRayBox(float2 p0, float2 p1, float2 boxMin, float2 boxMax)
 void Raytracer (uint3 id : SV_DispatchThreadID)
 {
     int intersections = 0;
+    destTexture[id.xy] = float4(1.0, 1.0, 1.0, 0.0);
 
     for(int i = 0; i < lights.Length; i++)
     {
@@ -80,10 +88,6 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
         float y2 = lightPos.y;
     }
 
-    float2 boxCenter = float2(56.0, 56.0);
-    float2 extents = float2(15.0, 15.0);
-    float2 boxMin = boxCenter - extents;
-    float2 boxMax = boxCenter + extents;
 
     for(int i = 0; i < lights.Length; i++)
     {
@@ -108,59 +112,65 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
             }
         }
 
-        intersections += TestRayBox(lightPos, float2(x1, y1), boxMin, boxMax);
-
-        if(intersections > 0)
+        for(int k = 0; k < boxes.Length; k++)
         {
-            //Find more accurate value rather than rounded off value
-            float2 dir = float2(0.0, 0.0);
-            
-            if(TestRayBox(lightPos, float2(x1 + 1.0, y1), boxMin, boxMax) == 0)
-            {
-                dir.x = 1.0;
-            } 
-            else if(TestRayBox(lightPos, float2(x1 - 1.0, y1), boxMin, boxMax) == 0)
-            {
-                dir.x = -1.0;
-            }
+            float2 boxCenter = boxes[k].center;
+            float2 extents = boxes[k].extents;
+            float2 boxMin = boxCenter - extents;
+            float2 boxMax = boxCenter + extents;
 
-            if(TestRayBox(lightPos, float2(x1, y1 + 1.0), boxMin, boxMax) == 0)
-            {
-                dir.y = 1.0;
-            }
-            else if(TestRayBox(lightPos, float2(x1, y1 - 1.0), boxMin, boxMax) == 0)
-            {                
-                dir.y = -1.0;
-            }
+            intersections = TestRayBox(lightPos, float2(x1, y1), boxMin, boxMax);
 
-            if(abs(dir.x) > 0.0 || abs(dir.y) > 0.0)
-            {
-                bool intersecting = true; 
-                float stepSize = 0.001;
-                float steps = 0.0;
 
-                while(intersecting == true && steps < 1000.0)
+            if(intersections > 0)
+            {
+                //Find more accurate value rather than rounded off value
+                float2 dir = float2(0.0, 0.0);
+                
+                if(TestRayBox(lightPos, float2(x1 + 1.0, y1), boxMin, boxMax) == 0)
                 {
-                    steps += 1.0;
-                    intersecting = TestRayBox(lightPos, float2(x1 + stepSize * steps * dir.x, y1 + stepSize * steps * dir.y), boxMin, boxMax) > 0;
+                    dir.x = 1.0;
+                } 
+                else if(TestRayBox(lightPos, float2(x1 - 1.0, y1), boxMin, boxMax) == 0)
+                {
+                    dir.x = -1.0;
                 }
 
-                float2 vertex = float2(x1 + stepSize * steps * dir.x, y1 + stepSize * steps * dir.y);
+                if(TestRayBox(lightPos, float2(x1, y1 + 1.0), boxMin, boxMax) == 0)
+                {
+                    dir.y = 1.0;
+                }
+                else if(TestRayBox(lightPos, float2(x1, y1 - 1.0), boxMin, boxMax) == 0)
+                {                
+                    dir.y = -1.0;
+                }
 
-                EdgeVertex v;
-                v.position = vertex;
-                v.roundedPos = float2(x1, y1);
-                edgeVertices.Append(v);
+                if(abs(dir.x) > 0.0 || abs(dir.y) > 0.0)
+                {
+                    bool intersecting = true; 
+                    float stepSize = 0.001;
+                    float steps = 0.0;
+
+                    while(intersecting == true && steps < 1000.0)
+                    {
+                        steps += 1.0;
+                        intersecting = TestRayBox(lightPos, float2(x1 + stepSize * steps * dir.x, y1 + stepSize * steps * dir.y), boxMin, boxMax) > 0;
+                    }
+
+                    float2 vertex = float2(x1 + stepSize * steps * dir.x, y1 + stepSize * steps * dir.y);
+
+                    EdgeVertex v;
+                    v.position = vertex;
+                    v.roundedPos = float2(x1, y1);
+                    v.shapeIndex = k;
+                    edgeVertices.Append(v);
+                }
+
+                if(intersections > 0)
+                {
+                    destTexture[id.xy] = float4(0.0, 0.0, 0.0, 1.0);
+                }
             }
         }
-    }
-
-    if(intersections > 0)
-    {
-        destTexture[id.xy] = float4(0.0, 0.0, 0.0, 1.0);
-    }
-    else 
-    {
-        destTexture[id.xy] = float4(0.75, 0.75, 0.75, 1.0);// - float4(dist, dist, dist, dist) / (1.5 * 1024.0);
     }
 }

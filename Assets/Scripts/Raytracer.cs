@@ -12,6 +12,7 @@ public class Raytracer : MonoBehaviour
 
     public SceneGeometry sceneGeometry;
     public SpaceConverter spaceConverter;
+    public ShadowColliders shadowColliders;
 
     private ComputeBuffer lightBuffer;
     private ComputeBuffer circleBuffer;
@@ -49,7 +50,7 @@ public class Raytracer : MonoBehaviour
 
     private void SetupRenderTexture()
     {
-        destTexture = new RenderTexture(textureResolution, textureResolution, 24, RenderTextureFormat.ARGB32);
+        destTexture = new RenderTexture(textureResolution, textureResolution, 32, RenderTextureFormat.ARGB32);
         destTexture.enableRandomWrite = true;
         destTexture.Create();
 
@@ -158,8 +159,6 @@ public class Raytracer : MonoBehaviour
 
             var deltaAngle = lastAngle - angle;
 
-            //Debug.Log("i = " + i + " angle = " + angle + " pos = " + curPos.x + ", " + curPos.y + " roundedPos = " + edgeVertices[i].roundedPosition + " change in angle = " + deltaAngle);
-
             if (Mathf.Abs(deltaAngle) * 180 / Mathf.PI > 1f)
             {
                 corners.Add(ev[i - 1]);
@@ -179,18 +178,15 @@ public class Raytracer : MonoBehaviour
         edgeVertices = GetEdgeVertices().ToList();
         shapeEdgeVertices = SortEdgeVerticesByAngle();
 
-        shapeEdgeVertices.ForEach(ev =>
+        for (var i = 0; i < shapeEdgeVertices.Count; i++)
         {
+            List<EdgeVertex> ev = shapeEdgeVertices[i];
             List<EdgeVertex> corners = FindCorners(ev);
 
-            for (var i = 1; i < corners.Count; i++)
-            {
-                Debug.DrawLine(spaceConverter.TextureToWorldSpace(corners[i - 1].position), spaceConverter.TextureToWorldSpace(corners[i].position), Color.magenta, Time.deltaTime);
-            }
-
-            Debug.DrawLine(spaceConverter.TextureToWorldSpace(corners[0].position), spaceConverter.TextureToWorldSpace(corners[corners.Count - 1].position), Color.magenta, Time.deltaTime);
-
-        });
+            //Convert to world space array
+            Vector2[] worldSpaceCorners = corners.Select(v => spaceConverter.TextureToWorldSpace(v.position)).ToArray();
+            shadowColliders.AddPointsToCollider(i, worldSpaceCorners);
+        }
 
         ReleaseBuffers();
     }

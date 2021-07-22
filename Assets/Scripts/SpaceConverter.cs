@@ -3,7 +3,6 @@ using UnityEngine;
 public class SpaceConverter : MonoBehaviour
 {
     public Camera cam;
-    private int textureResolution = 1024;
 
     void Awake()
     {
@@ -12,12 +11,12 @@ public class SpaceConverter : MonoBehaviour
 
     public Vector2 WorldToTextureSpace(Vector2 worldPos)
     {
-        return cam.WorldToViewportPoint(worldPos) * textureResolution;
+        return cam.WorldToViewportPoint(worldPos) * Raytracer.textureResolution;
     }
 
     public Vector2 TextureToWorldSpace(Vector2 texturePos)
     {
-        Vector3 viewPortPos = new Vector3(1f - (float)texturePos.x / (float)textureResolution, 1f - (float)texturePos.y / (float)textureResolution, cam.transform.position.z);
+        Vector3 viewPortPos = new Vector3(1f - (float)texturePos.x / (float)Raytracer.textureResolution, 1f - (float)texturePos.y / (float)Raytracer.textureResolution, cam.transform.position.z);
         Vector2 result = cam.ViewportToWorldPoint(viewPortPos);
         return result;
     }

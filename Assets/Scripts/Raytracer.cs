@@ -7,41 +7,29 @@ using System.Linq;
 public class Raytracer : MonoBehaviour
 {
     public ComputeShader computeShader;
-    public ComputeShader edgeDetection;
-    public ComputeShader optimizeEdges;
 
     public SceneGeometry sceneGeometry;
     public SpaceConverter spaceConverter;
     public ShadowColliders shadowColliders;
+    public ShadowRenderer shadowRenderer;
 
     private ComputeBuffer lightBuffer;
     private ComputeBuffer circleBuffer;
     private ComputeBuffer boxBuffer;
     private ComputeBuffer edgeVertexBuffer;
-
     private List<EdgeVertex> edgeVertices;
-
     private List<List<EdgeVertex>> shapeEdgeVertices;
 
     private int raytracerKI;
-    private int edgeDetectionKI;
-    private int optimizeEdgesKI;
     public RenderTexture destTexture;
-    private RenderTexture edgePositionTexture;
-
-    private float cpuTimer = 0f;
-    private float cpuFPS = 1f;
-
-    private int textureResolution = 1024;
+    public static int textureResolution = 1024;
 
     void Start()
     {
-        cpuTimer = 1f / cpuFPS;
         raytracerKI = computeShader.FindKernel("Raytracer");
-        edgeDetectionKI = edgeDetection.FindKernel("EdgeDetection");
-        optimizeEdgesKI = optimizeEdges.FindKernel("OptimizeEdges");
 
         SetupRenderTexture();
+        shadowRenderer.SetTexture(destTexture);
     }
 
     private void onDestroy()
@@ -54,24 +42,7 @@ public class Raytracer : MonoBehaviour
         destTexture.enableRandomWrite = true;
         destTexture.Create();
 
-        //Contains accurate edge positions X, Y in R, G channels rather than rounded pixels
-        edgePositionTexture = new RenderTexture(textureResolution, textureResolution, 24, RenderTextureFormat.RGFloat);
-        edgePositionTexture.enableRandomWrite = true;
-        edgePositionTexture.Create();
-
         computeShader.SetTexture(raytracerKI, "destTexture", destTexture);
-        computeShader.SetTexture(raytracerKI, "edgePositionTexture", edgePositionTexture);
-
-        edgeDetection.SetTexture(edgeDetectionKI, "inputTexture", destTexture);
-
-        optimizeEdges.SetTexture(optimizeEdgesKI, "inputTexture", destTexture);
-        optimizeEdges.SetTexture(raytracerKI, "edgePositionTexture", edgePositionTexture);
-
-    }
-
-    private void OnRenderImage(RenderTexture src, RenderTexture dest)
-    {
-        Graphics.Blit(destTexture, dest);
     }
 
     private void SetRaytracingBuffers()
@@ -110,7 +81,7 @@ public class Raytracer : MonoBehaviour
         List<Vector2> centroids = new List<Vector2>();
         shapeEdgeVertices = new List<List<EdgeVertex>>();
 
-        //Calculate centroids for each shape
+        //  lculate centroids for each shape
         for (var i = 0; i < edgeVertices.Count; i++)
         {
             int shapeIndex = edgeVertices[i].shapeIndex;

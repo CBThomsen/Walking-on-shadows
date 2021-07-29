@@ -31,63 +31,85 @@ public class SceneGeometry : MonoBehaviour
 {
     public SpaceConverter spaceConverter;
 
-    public GameObject[] sceneLights;
-    public CircleCollider2D[] sceneCircles;
-    public BoxCollider2D[] sceneBoxes;
+    private List<GameObject> sceneLights;
+    private List<CircleCollider2D> sceneCircles;
+    private List<BoxCollider2D> sceneBoxes;
 
-    private CircleData[] circleData;
-    private BoxData[] boxData;
-    private LightData[] lightData;
+    private List<CircleData> circleData;
+    private List<BoxData> boxData;
+    private List<LightData> lightData;
 
-    void Awake()
+    void Start()
     {
-        sceneLights = GameObject.FindGameObjectsWithTag("Light");
+        Transform[] childObjects = gameObject.GetComponentsInChildren<Transform>(true);
 
-        lightData = new LightData[sceneLights.Length];
-        circleData = new CircleData[sceneCircles.Length];
-        boxData = new BoxData[sceneBoxes.Length];
+        Debug.Log(childObjects.Length);
+
+        sceneLights = childObjects.Where(t => t.tag == "Light").Select(t => t.gameObject).ToList();
+        sceneBoxes = childObjects.Where(t => t.tag == "EnvBox").Select(g => g.GetComponent<BoxCollider2D>()).ToList();
+        sceneCircles = childObjects.Where(t => t.tag == "EnvCircle").Select(g => g.GetComponent<CircleCollider2D>()).ToList();
+
+        lightData = new List<LightData>();
+        circleData = new List<CircleData>();
+        boxData = new List<BoxData>();
     }
 
     public LightData[] GetLightDataArray()
     {
-        return lightData;
+        return lightData.ToArray();
     }
 
     public CircleData[] GetCircleDatas()
     {
-        return circleData;
+        return circleData.ToArray();
     }
 
     public BoxData[] GetBoxDatas()
     {
-        return boxData;
+        return boxData.ToArray();
     }
 
     private void Update()
     {
-        for (var i = 0; i < sceneLights.Length; i++)
+        lightData.Clear();
+        circleData.Clear();
+        boxData.Clear();
+
+        for (var i = 0; i < sceneLights.Count; i++)
         {
-            //lightData[i].worldPos = sceneLights[i].transform.position;
-            lightData[i].position = spaceConverter.WorldToTextureSpace(sceneLights[i].transform.position);
-            //lightData[i].position = cam.WorldToViewportPoint(sceneLights[i].transform.position);
+            if (!sceneLights[i].activeInHierarchy)
+                continue;
+
+            var l = new LightData();
+            l.position = spaceConverter.WorldToTextureSpace(sceneLights[i].transform.position);
+
+            lightData.Add(l);
         }
 
-        for (var j = 0; j < sceneCircles.Length; j++)
+        for (var j = 0; j < sceneCircles.Count; j++)
         {
-            //circleData[i].center = cam.WorldToViewportPoint(sceneCircles[i].transform.position);
+            if (!sceneCircles[j].gameObject.activeInHierarchy)
+                continue;
 
-            circleData[j].center = spaceConverter.WorldToTextureSpace(sceneCircles[j].transform.position);
-            circleData[j].radius = spaceConverter.WorldToTextureSpace(new Vector2(sceneCircles[j].transform.position.x + sceneCircles[j].radius, 0)).x - circleData[j].center.x;
+            var c = new CircleData();
+            c.center = spaceConverter.WorldToTextureSpace(sceneCircles[j].transform.position);
+            c.radius = spaceConverter.WorldToTextureSpace(new Vector2(sceneCircles[j].transform.position.x + sceneCircles[j].radius, 0)).x - c.center.x;
+
+            circleData.Add(c);
         }
 
-        for (var j = 0; j < sceneBoxes.Length; j++)
+        for (var j = 0; j < sceneBoxes.Count; j++)
         {
-            //circleData[i].center = cam.WorldToViewportPoint(sceneCircles[i].transform.position);
+            if (!sceneBoxes[j].gameObject.activeInHierarchy)
+                continue;
 
-            boxData[j].center = spaceConverter.WorldToTextureSpace(sceneBoxes[j].transform.position);
+            var b = new BoxData();
+            b.center = spaceConverter.WorldToTextureSpace(sceneBoxes[j].transform.position);
 
             var boxMax = (Vector2)sceneBoxes[j].transform.position + sceneBoxes[j].size * 0.5f;
-            boxData[j].extents = spaceConverter.WorldToTextureSpace(boxMax) - boxData[j].center;
+            b.extents = spaceConverter.WorldToTextureSpace(boxMax) - b.center;
+
+            boxData.Add(b);
         }
     }
 

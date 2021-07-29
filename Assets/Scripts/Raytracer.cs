@@ -53,9 +53,12 @@ public class Raytracer : MonoBehaviour
         computeShader.SetBuffer(raytracerKI, "lights", lightBuffer);
 
         CircleData[] circleDataArray = this.sceneGeometry.GetCircleDatas();
-        circleBuffer = new ComputeBuffer(circleDataArray.Length, circleDataArray.Length * 3 * sizeof(float));
-        circleBuffer.SetData(circleDataArray);
-        computeShader.SetBuffer(raytracerKI, "circles", circleBuffer);
+        if (circleDataArray.Length > 0)
+        {
+            circleBuffer = new ComputeBuffer(circleDataArray.Length, circleDataArray.Length * 3 * sizeof(float));
+            circleBuffer.SetData(circleDataArray);
+            computeShader.SetBuffer(raytracerKI, "circles", circleBuffer);
+        }
 
         BoxData[] boxDataArray = this.sceneGeometry.GetBoxDatas();
         boxBuffer = new ComputeBuffer(boxDataArray.Length, boxDataArray.Length * 4 * sizeof(float));
@@ -148,6 +151,7 @@ public class Raytracer : MonoBehaviour
 
         edgeVertices = GetEdgeVertices().ToList();
         shapeEdgeVertices = SortEdgeVerticesByAngle();
+        shadowColliders.ResetColliders();
 
         for (var i = 0; i < shapeEdgeVertices.Count; i++)
         {
@@ -164,8 +168,6 @@ public class Raytracer : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        return;
-
         if (edgeVertices == null)
             return;
 
@@ -189,9 +191,12 @@ public class Raytracer : MonoBehaviour
 
     private void ReleaseBuffers()
     {
-        circleBuffer.Release();
+        if (circleBuffer != null)
+            circleBuffer.Release();
+
         lightBuffer.Release();
         edgeVertexBuffer.Release();
+        boxBuffer.Release();
     }
 
     public void saveCSV()

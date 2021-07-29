@@ -8,6 +8,12 @@ public class ShadowColliders : MonoBehaviour
 {
     public GameObject prefab;
 
+    public void ResetColliders()
+    {
+        PolygonCollider2D polyCol = prefab.GetComponent<PolygonCollider2D>();
+        polyCol.pathCount = 0;
+    }
+
     public void AddPointsToCollider(int index, Vector2[] points)
     {
         PolygonCollider2D polyCol = prefab.GetComponent<PolygonCollider2D>();

@@ -14,16 +14,12 @@ public class ShadowColliders : MonoBehaviour
         polyCol.pathCount = 0;
     }
 
-    public void AddPointsToCollider(int index, Vector2[] points)
+    public void AddPointsToCollider(Vector2[] points)
     {
         PolygonCollider2D polyCol = prefab.GetComponent<PolygonCollider2D>();
+        polyCol.pathCount += 1;
 
-        if (index >= polyCol.pathCount)
-        {
-            polyCol.pathCount = index + 1;
-        }
-
-        polyCol.SetPath(index, points);
+        polyCol.SetPath(polyCol.pathCount - 1, points);
     }
 
 }

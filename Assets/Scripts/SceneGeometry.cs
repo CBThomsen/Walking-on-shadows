@@ -17,6 +17,7 @@ public struct BoxData
 
 public struct LightData
 {
+    public float angle;
     public Vector2 position;
 }
 
@@ -82,6 +83,7 @@ public class SceneGeometry : MonoBehaviour
 
             var l = new LightData();
             l.position = spaceConverter.WorldToTextureSpace(sceneLights[i].transform.position);
+            l.angle = sceneLights[i].transform.rotation.eulerAngles.z * Mathf.PI / 180f;
 
             lightData.Add(l);
         }

@@ -6,6 +6,7 @@ using System.Linq;
 
 public class ShadowRenderer : MonoBehaviour
 {
+
     public void SetTexture(RenderTexture texture)
     {
         MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();

@@ -48,7 +48,7 @@ public class Raytracer : MonoBehaviour
     private void SetRaytracingBuffers()
     {
         LightData[] lightDataArray = this.sceneGeometry.GetLightDataArray();
-        lightBuffer = new ComputeBuffer(lightDataArray.Length, lightDataArray.Length * 2 * sizeof(float));
+        lightBuffer = new ComputeBuffer(lightDataArray.Length, lightDataArray.Length * 3 * sizeof(float));
         lightBuffer.SetData(lightDataArray);
         computeShader.SetBuffer(raytracerKI, "lights", lightBuffer);
 
@@ -129,7 +129,7 @@ public class Raytracer : MonoBehaviour
             Vector2 curPos = new Vector2(ev[i % (ev.Count - 1)].position.x, ev[i % (ev.Count - 1)].position.y);
 
             Vector2 deltaPos = curPos - lastPos;
-            float angle = Mathf.Atan2(deltaPos.y, deltaPos.x);
+            float angle = (Mathf.Atan2(deltaPos.y, deltaPos.x) + Mathf.PI) % (Mathf.PI);
 
             var deltaAngle = lastAngle - angle;
 
@@ -158,9 +158,21 @@ public class Raytracer : MonoBehaviour
             List<EdgeVertex> ev = shapeEdgeVertices[i];
             List<EdgeVertex> corners = FindCorners(ev);
 
+            if (corners.Count == 0)
+                continue;
+
+
             //Convert to world space array
             Vector2[] worldSpaceCorners = corners.Select(v => spaceConverter.TextureToWorldSpace(v.position)).ToArray();
-            shadowColliders.AddPointsToCollider(i, worldSpaceCorners);
+            shadowColliders.AddPointsToCollider(worldSpaceCorners);
+
+            /*for (var j = 1; j < corners.Count; j++)
+            {
+                Debug.DrawLine(spaceConverter.TextureToWorldSpace(corners[j - 1].position), spaceConverter.TextureToWorldSpace(corners[j].position), Color.magenta, Time.deltaTime);
+            }
+
+            Debug.DrawLine(spaceConverter.TextureToWorldSpace(corners[corners.Count - 1].position), spaceConverter.TextureToWorldSpace(corners[0].position), Color.magenta, Time.deltaTime);
+            */
         }
 
         ReleaseBuffers();
@@ -179,14 +191,13 @@ public class Raytracer : MonoBehaviour
             //Gizmos.DrawLine(spaceConverter.TextureToWorldSpace(lastPos), spaceConverter.TextureToWorldSpace(curPos));
         }
         /*
-            for (var i = 1; i < corners.Count; i++)
-            {
-                //Gizmos.DrawLine(spaceConverter.TextureToWorldSpace(corners[i - 1].position), spaceConverter.TextureToWorldSpace(corners[i].position));
-            }
+        for (var i = 1; i < corners.Count; i++)
+        {
+            //Gizmos.DrawLine(spaceConverter.TextureToWorldSpace(corners[i - 1].position), spaceConverter.TextureToWorldSpace(corners[i].position));
+        }
 
-            Gizmos.DrawLine(spaceConverter.TextureToWorldSpace(corners[corners.Count - 1].position), spaceConverter.TextureToWorldSpace(corners[0].position));
-            */
-
+        Gizmos.DrawLine(spaceConverter.TextureToWorldSpace(corners[corners.Count - 1].position), spaceConverter.TextureToWorldSpace(corners[0].position));
+        */
     }
 
     private void ReleaseBuffers()

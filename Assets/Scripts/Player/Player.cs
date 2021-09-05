@@ -1,62 +1,84 @@
 using UnityEngine;
 using UnityEngine.Events;
+using System.Linq;
 
 public class Player : MonoBehaviour
 {
-    public FlyingControls flyingControls;
-    private CharacterController characterController;
+    [SerializeField]
+    private GameObject playerGraphic;
 
-    private bool controllingLight;
-    private bool mouseDown;
+    [SerializeField]
+    private InputReciever playerInputReciever;
 
-    private float moveSpeed = 35f;
-    private float flyingSpeed = 45f;
-    private float horizontalMove = 0f;
-    private float verticalMove = 0f;
-    private bool jump = false;
+    private InputReciever inputReciever;
 
-    private Vector3 targetPosition;
+    private bool controllingPlayer;
 
     void Start()
     {
-        characterController = gameObject.GetComponent<CharacterController>();
+        controllingPlayer = true;
+        inputReciever = GetComponent<InputReciever>();
     }
 
     void Update()
     {
-        horizontalMove = Input.GetAxisRaw("Horizontal");
-        verticalMove = Input.GetAxisRaw("Vertical");
-
-        jump = Input.GetButtonDown("Jump");
 
         if (Input.GetKeyUp(KeyCode.X))
         {
-            controllingLight = !controllingLight;
-        }
-
-        mouseDown = Input.GetMouseButton(0);
-
-        Vector3 mousePos = Input.mousePosition;
-        mousePos.z = -Camera.main.transform.position.z;
-        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(mousePos);
-        targetPosition = mouseWorldPos - flyingControls.transform.position;
-    }
-
-    void FixedUpdate()
-    {
-        if (controllingLight)
-        {
-            Vector3 dir = targetPosition;
-            dir.Normalize();
-            flyingControls.transform.rotation = Quaternion.Lerp(flyingControls.transform.rotation, Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * 180f / Mathf.PI), 0.25f);
-
-            if (mouseDown)
+            if (controllingPlayer)
             {
-                flyingControls.Move(dir.x * flyingSpeed * Time.fixedDeltaTime, dir.y * flyingSpeed * Time.fixedDeltaTime);
+                InputReciever newInputReciever = FindNewInputReciever();
+                if (newInputReciever != null)
+                {
+                    inputReciever = newInputReciever;
+                    controllingPlayer = false;
+                    PlayerControlChanged();
+                }
+            }
+            else
+            {
+                controllingPlayer = true;
+                PlayerControlChanged();
+                inputReciever = playerInputReciever;
             }
         }
 
-        characterController.Move(horizontalMove * moveSpeed * Time.fixedDeltaTime, false, jump);
-        jump = false;
+        if (Input.GetMouseButton(0))
+            inputReciever.OnMouseDown();
+
+        inputReciever.OnHorizontalKeyDown(Input.GetAxisRaw("Horizontal"));
+        inputReciever.OnVerticalKeyDown(Input.GetAxisRaw("Vertical"));
+
+        if (Input.GetButtonDown("Jump"))
+            inputReciever.OnJumpDown();
+    }
+
+    private InputReciever FindNewInputReciever()
+    {
+        Collider2D[] overlappingColliders = Physics2D.OverlapCircleAll(transform.position, 0.25f);
+        InputReciever newInputReciever = null;
+
+        for (var i = 0; i < overlappingColliders.Length; i++)
+        {
+            newInputReciever = overlappingColliders[i].GetComponent<InputReciever>();
+
+            if (newInputReciever != null)
+                return newInputReciever;
+        }
+
+        return newInputReciever;
+    }
+
+    private void PlayerControlChanged()
+    {
+        if (controllingPlayer)
+        {
+            playerGraphic.SetActive(true);
+            transform.position = inputReciever.transform.position;
+        }
+        else
+        {
+            playerGraphic.SetActive(false);
+        }
     }
 }

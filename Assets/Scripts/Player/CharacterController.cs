@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-public class CharacterController : MonoBehaviour
+public class CharacterController : InputReciever
 {
     [SerializeField] private float m_JumpForce = 400f;                          // Amount of force added when the player jumps.
     [Range(0, 1)] [SerializeField] private float m_CrouchSpeed = .36f;          // Amount of maxSpeed applied to crouching movement. 1 = 100%
@@ -26,6 +26,8 @@ public class CharacterController : MonoBehaviour
 
     [System.Serializable]
     public class BoolEvent : UnityEvent<bool> { }
+
+    private float speed = 100f;
 
     public BoolEvent OnCrouchEvent;
     private bool m_wasCrouching = false;
@@ -58,6 +60,16 @@ public class CharacterController : MonoBehaviour
                     OnLandEvent.Invoke();
             }
         }
+    }
+
+    public override void OnHorizontalKeyDown(float horizontal)
+    {
+        Move(horizontal * speed * Time.deltaTime, false, false);
+    }
+
+    public override void OnJumpDown()
+    {
+        Move(0f, false, true);
     }
 
     public void Move(float move, bool crouch, bool jump)

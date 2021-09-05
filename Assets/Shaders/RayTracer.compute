@@ -94,11 +94,6 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
         float angle = fmod(atan2(direction.y, -direction.x) + lightAngle + 2 * PI, 2 * PI);
         float dist = sqrt(pow(direction.x, 2) + pow(direction.y, 2));
         float2 directionNormalized = direction / dist;
-
-        if(angle > 0.75 || angle < -0.0)
-            continue;
-        else
-           destTexture[id.xy] = float4(0.9, 0.9, 0.9, 0.35);
                     
         for(int j = 0; j < circles.Length; j++)
         {

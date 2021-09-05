@@ -44,8 +44,6 @@ public class SceneGeometry : MonoBehaviour
     {
         Transform[] childObjects = gameObject.GetComponentsInChildren<Transform>(true);
 
-        Debug.Log(childObjects.Length);
-
         sceneLights = childObjects.Where(t => t.tag == "Light").Select(t => t.gameObject).ToList();
         sceneBoxes = childObjects.Where(t => t.tag == "EnvBox").Select(g => g.GetComponent<BoxCollider2D>()).ToList();
         sceneCircles = childObjects.Where(t => t.tag == "EnvCircle").Select(g => g.GetComponent<CircleCollider2D>()).ToList();

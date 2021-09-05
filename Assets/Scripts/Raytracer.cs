@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using System.Linq;
+using System;
 
 public class Raytracer : MonoBehaviour
 {
@@ -125,8 +126,10 @@ public class Raytracer : MonoBehaviour
 
         for (var i = 1; i < ev.Count + 1; i++)
         {
+            int curIndex = i == ev.Count ? 0 : i;
+
             Vector2 lastPos = new Vector2(ev[i - 1].position.x, ev[i - 1].position.y);
-            Vector2 curPos = new Vector2(ev[i % (ev.Count - 1)].position.x, ev[i % (ev.Count - 1)].position.y);
+            Vector2 curPos = new Vector2(ev[curIndex].position.x, ev[curIndex].position.y);
 
             Vector2 deltaPos = curPos - lastPos;
             float angle = (Mathf.Atan2(deltaPos.y, deltaPos.x) + Mathf.PI) % (Mathf.PI);
@@ -156,6 +159,7 @@ public class Raytracer : MonoBehaviour
         for (var i = 0; i < shapeEdgeVertices.Count; i++)
         {
             List<EdgeVertex> ev = shapeEdgeVertices[i];
+
             List<EdgeVertex> corners = FindCorners(ev);
 
             if (corners.Count == 0)
@@ -166,13 +170,13 @@ public class Raytracer : MonoBehaviour
             Vector2[] worldSpaceCorners = corners.Select(v => spaceConverter.TextureToWorldSpace(v.position)).ToArray();
             shadowColliders.AddPointsToCollider(worldSpaceCorners);
 
-            /*for (var j = 1; j < corners.Count; j++)
+            /*
+            for (var j = 1; j < corners.Count; j++)
             {
                 Debug.DrawLine(spaceConverter.TextureToWorldSpace(corners[j - 1].position), spaceConverter.TextureToWorldSpace(corners[j].position), Color.magenta, Time.deltaTime);
             }
 
-            Debug.DrawLine(spaceConverter.TextureToWorldSpace(corners[corners.Count - 1].position), spaceConverter.TextureToWorldSpace(corners[0].position), Color.magenta, Time.deltaTime);
-            */
+            Debug.DrawLine(spaceConverter.TextureToWorldSpace(corners[corners.Count - 1].position), spaceConverter.TextureToWorldSpace(corners[0].position), Color.magenta, Time.deltaTime);*/
         }
 
         ReleaseBuffers();

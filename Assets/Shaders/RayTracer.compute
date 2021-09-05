@@ -94,6 +94,10 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
         float angle = fmod(atan2(direction.y, -direction.x) + lightAngle + 2 * PI, 2 * PI);
         float dist = sqrt(pow(direction.x, 2) + pow(direction.y, 2));
         float2 directionNormalized = direction / dist;
+
+        float maxDistance = 700.0;
+        if(dist > maxDistance)
+            continue;
                     
         for(int j = 0; j < circles.Length; j++)
         {
@@ -137,6 +141,9 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
                     dir.y = -1.0;
                 }
 
+                bool isEdgeVertex = false;
+                float2 vertex;
+
                 if(abs(dir.x) > 0.0 || abs(dir.y) > 0.0)
                 {
                     bool intersecting = true; 
@@ -149,20 +156,32 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
                         intersecting = TestRayBox(lightPos, float2(x1 + stepSize * steps * dir.x, y1 + stepSize * steps * dir.y), boxMin, boxMax) > 0;
                     }
 
-                    float2 vertex = float2(x1 + stepSize * steps * dir.x, y1 + stepSize * steps * dir.y);
+                    vertex = float2(x1 + stepSize * steps * dir.x, y1 + stepSize * steps * dir.y);
+                    isEdgeVertex = true;
+                }
 
+                if(round(dist) == round(maxDistance))
+                {
+                    isEdgeVertex = true;
+                    vertex = float2(x2 - directionNormalized.x * maxDistance, y2 - directionNormalized.y * maxDistance);
+                }
+
+                if(isEdgeVertex)
+                {
                     EdgeVertex v;
                     v.position = vertex;
                     v.roundedPos = float2(x1, y1);
-                    v.shapeIndex = i * lights.Length + k;
+                    v.shapeIndex = i * max(lights.Length, boxes.Length) + k;
                     edgeVertices.Append(v);
                 }
+            }
 
-                if(intersections > 0)
-                {
-                    destTexture[id.xy] += float4(0.0, 0.0, 0.0, 1.0);
-                    destTexture[id.xy] *= float4(0.0, 0.0, 0.0, 0.5);
-                }
+            if(intersections > 0)
+            {
+                float attenuation = (1.0 / (pow(dist / maxDistance, 2)) - 1.0);
+                destTexture[id.xy] *= float4(0.0, 0.0, 0.0, 1.0);
+                destTexture[id.xy] += float4(0.0, 0.0, 0.0, 1.0 * min(0.5, attenuation));
+                destTexture[id.xy] = min(destTexture[id.xy], float4(0.0, 0.0, 0.0, 0.5));
             }
         }
     }

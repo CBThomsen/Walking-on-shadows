@@ -22,24 +22,12 @@ public class Player : MonoBehaviour
 
     void Update()
     {
-
-        if (Input.GetKeyUp(KeyCode.X))
+        if (Input.GetMouseButtonDown(0))
         {
-            if (controllingPlayer)
+            InputReciever newInputReciever = FindNewInputReciever();
+            if (newInputReciever != null)
             {
-                InputReciever newInputReciever = FindNewInputReciever();
-                if (newInputReciever != null)
-                {
-                    inputReciever = newInputReciever;
-                    controllingPlayer = false;
-                    PlayerControlChanged();
-                }
-            }
-            else
-            {
-                controllingPlayer = true;
-                PlayerControlChanged();
-                inputReciever = playerInputReciever;
+                inputReciever = newInputReciever;
             }
         }
 
@@ -55,7 +43,11 @@ public class Player : MonoBehaviour
 
     private InputReciever FindNewInputReciever()
     {
-        Collider2D[] overlappingColliders = Physics2D.OverlapCircleAll(transform.position, 0.25f);
+        Vector3 mousePos = Input.mousePosition;
+        mousePos.z = -Camera.main.transform.position.z;
+        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(mousePos);
+
+        Collider2D[] overlappingColliders = Physics2D.OverlapCircleAll(mouseWorldPos, 0.25f);
         InputReciever newInputReciever = null;
 
         for (var i = 0; i < overlappingColliders.Length; i++)
@@ -67,18 +59,5 @@ public class Player : MonoBehaviour
         }
 
         return newInputReciever;
-    }
-
-    private void PlayerControlChanged()
-    {
-        if (controllingPlayer)
-        {
-            playerGraphic.SetActive(true);
-            transform.position = inputReciever.transform.position;
-        }
-        else
-        {
-            playerGraphic.SetActive(false);
-        }
     }
 }

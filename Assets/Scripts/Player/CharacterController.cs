@@ -1,158 +1,116 @@
 using UnityEngine;
 using UnityEngine.Events;
+using System.Linq;
+using System.Collections.Generic;
 
 public class CharacterController : InputReciever
 {
-    [SerializeField] private float m_JumpForce = 400f;                          // Amount of force added when the player jumps.
-    [Range(0, 1)] [SerializeField] private float m_CrouchSpeed = .36f;          // Amount of maxSpeed applied to crouching movement. 1 = 100%
-    [Range(0, .3f)] [SerializeField] private float m_MovementSmoothing = .05f;  // How much to smooth out the movement
-    [SerializeField] private bool m_AirControl = false;                         // Whether or not a player can steer while jumping;
-    [SerializeField] private LayerMask m_WhatIsGround;                          // A mask determining what is ground to the character
-    [SerializeField] private Transform m_GroundCheck;                           // A position marking where to check if the player is grounded.
-    [SerializeField] private Transform m_CeilingCheck;                          // A position marking where to check for ceilings
-    [SerializeField] private Collider2D m_CrouchDisableCollider;                // A collider that will be disabled when crouching
+    [SerializeField]
+    private float jumpForce = 400f;
 
-    const float k_GroundedRadius = .2f; // Radius of the overlap circle to determine if grounded
-    private bool m_Grounded;            // Whether or not the player is grounded.
-    const float k_CeilingRadius = .2f; // Radius of the overlap circle to determine if the player can stand up
-    private Rigidbody2D m_Rigidbody2D;
-    private bool m_FacingRight = true;  // For determining which way the player is currently facing.
-    private Vector3 m_Velocity = Vector3.zero;
+    [SerializeField]
+    private float moveSpeed = 250f;
 
-    [Header("Events")]
-    [Space]
+    [SerializeField]
+    private float maxSlopeAngle = 35f;
 
-    public UnityEvent OnLandEvent;
+    [Range(0, .3f)]
+    [SerializeField] private float movementSmoothing = .05f;
 
-    [System.Serializable]
-    public class BoolEvent : UnityEvent<bool> { }
+    [SerializeField]
+    private bool airControl = false;
 
-    private float speed = 100f;
+    [SerializeField] private LayerMask groundLayerMask;
+    [SerializeField] private Transform groundTransform;
 
-    public BoolEvent OnCrouchEvent;
-    private bool m_wasCrouching = false;
+    private const float groundedRadius = 0.75f;
+    private bool grounded;
+    private float slopeAngle;
+    private Rigidbody2D body;
+    private bool facingRight = true;
+    private Vector3 velocity;
 
     private void Awake()
     {
-        m_Rigidbody2D = GetComponent<Rigidbody2D>();
-
-        if (OnLandEvent == null)
-            OnLandEvent = new UnityEvent();
-
-        if (OnCrouchEvent == null)
-            OnCrouchEvent = new BoolEvent();
+        body = GetComponent<Rigidbody2D>();
     }
 
     private void FixedUpdate()
     {
-        bool wasGrounded = m_Grounded;
-        m_Grounded = false;
+        bool wasGrounded = grounded;
+        grounded = false;
+        slopeAngle = 0f;
 
-        // The player is grounded if a circlecast to the groundcheck position hits anything designated as ground
-        // This can be done using layers instead but Sample Assets will not overwrite your project settings.
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(m_GroundCheck.position, k_GroundedRadius, m_WhatIsGround);
+        /*Collider2D[] colliders = Physics2D.OverlapCircleAll(groundTransform.position, groundedRadius, groundLayerMask);
         for (int i = 0; i < colliders.Length; i++)
         {
             if (colliders[i].gameObject != gameObject)
             {
-                m_Grounded = true;
-                if (!wasGrounded)
-                    OnLandEvent.Invoke();
+                grounded = true;
             }
+        }*/
+
+        float newSlopeAngle = float.MaxValue;
+
+        RaycastHit2D[] hitsLeftLeg = Physics2D.RaycastAll(transform.position + Vector3.left * 0.3f, -transform.up, groundedRadius, groundLayerMask);
+        RaycastHit2D[] hitsRightLeg = Physics2D.RaycastAll(transform.position + Vector3.right * 0.3f, -transform.up, groundedRadius, groundLayerMask);
+        IEnumerable<RaycastHit2D> allHits = hitsLeftLeg.Concat(hitsRightLeg);
+
+        foreach (RaycastHit2D hit in allHits)
+        {
+            if (hit.collider.gameObject == gameObject)
+                continue;
+
+            float angle = Vector3.Angle(hit.normal, transform.up);
+            newSlopeAngle = Mathf.Min(angle, newSlopeAngle);
+            grounded = true;
         }
+
+        if (grounded)
+            slopeAngle = newSlopeAngle;
     }
 
     public override void OnHorizontalKeyDown(float horizontal)
     {
-        Move(horizontal * speed * Time.deltaTime, false, false);
+        Move(horizontal * moveSpeed * Time.fixedDeltaTime, false);
     }
 
     public override void OnJumpDown()
     {
-        Move(0f, false, true);
+        Move(0f, true);
     }
 
-    public void Move(float move, bool crouch, bool jump)
+    public void Move(float move, bool jump)
     {
-        // If crouching, check to see if the character can stand up
-        if (!crouch)
+        if ((grounded || airControl) && slopeAngle < maxSlopeAngle)
         {
-            // If the character has a ceiling preventing them from standing up, keep them crouching
-            if (Physics2D.OverlapCircle(m_CeilingCheck.position, k_CeilingRadius, m_WhatIsGround))
+            Vector3 targetVelocity = new Vector2(move, body.velocity.y);
+            body.velocity = Vector3.SmoothDamp(body.velocity, targetVelocity, ref velocity, movementSmoothing);
+
+            if (move > 0 && !facingRight)
             {
-                crouch = true;
-            }
-        }
-
-        //only control the player if grounded or airControl is turned on
-        if (m_Grounded || m_AirControl)
-        {
-
-            // If crouching
-            if (crouch)
-            {
-                if (!m_wasCrouching)
-                {
-                    m_wasCrouching = true;
-                    OnCrouchEvent.Invoke(true);
-                }
-
-                // Reduce the speed by the crouchSpeed multiplier
-                move *= m_CrouchSpeed;
-
-                // Disable one of the colliders when crouching
-                if (m_CrouchDisableCollider != null)
-                    m_CrouchDisableCollider.enabled = false;
-            }
-            else
-            {
-                // Enable the collider when not crouching
-                if (m_CrouchDisableCollider != null)
-                    m_CrouchDisableCollider.enabled = true;
-
-                if (m_wasCrouching)
-                {
-                    m_wasCrouching = false;
-                    OnCrouchEvent.Invoke(false);
-                }
-            }
-
-            // Move the character by finding the target velocity
-            Vector3 targetVelocity = new Vector2(move * 10f, m_Rigidbody2D.velocity.y);
-            // And then smoothing it out and applying it to the character
-            m_Rigidbody2D.velocity = Vector3.SmoothDamp(m_Rigidbody2D.velocity, targetVelocity, ref m_Velocity, m_MovementSmoothing);
-
-            // If the input is moving the player right and the player is facing left...
-            if (move > 0 && !m_FacingRight)
-            {
-                // ... flip the player.
                 Flip();
             }
-            // Otherwise if the input is moving the player left and the player is facing right...
-            else if (move < 0 && m_FacingRight)
+            else if (move < 0 && facingRight)
             {
-                // ... flip the player.
                 Flip();
             }
         }
-        // If the player should jump...
-        if (m_Grounded && jump)
+
+        if (grounded && jump && slopeAngle < maxSlopeAngle)
         {
-            // Add a vertical force to the player.
-            m_Grounded = false;
-            m_Rigidbody2D.AddForce(new Vector2(0f, m_JumpForce));
+            grounded = false;
+            body.AddForce(new Vector2(0f, jumpForce));
         }
     }
 
 
     private void Flip()
     {
-        // Switch the way the player is labelled as facing.
-        m_FacingRight = !m_FacingRight;
+        facingRight = !facingRight;
 
-        // Multiply the player's x local scale by -1.
-        Vector3 theScale = transform.localScale;
-        theScale.x *= -1;
-        transform.localScale = theScale;
+        Vector3 currentScale = transform.localScale;
+        currentScale.x *= -1;
+        transform.localScale = currentScale;
     }
 }

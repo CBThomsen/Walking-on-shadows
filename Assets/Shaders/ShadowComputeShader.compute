@@ -157,11 +157,11 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
                     isEdgeVertex = true;
                 }
 
-                /*if(round(distance) == round(lightRange))
+                if(pixelPos.x == 0 || pixelPos.x == 1024 || pixelPos.y == 0 || pixelPos.y == 1024)
                 {
                     isEdgeVertex = true;
-                    vertex = pixelPos - direction / distance * lightRange;
-                }*/
+                    vertex = pixelPos;
+                }
 
                 if(isEdgeVertex)
                 {

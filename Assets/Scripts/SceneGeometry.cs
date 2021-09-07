@@ -18,6 +18,9 @@ public struct BoxData
 public struct LightData
 {
     public float angle;
+    public float range;
+    public float intensity;
+    public Vector4 color;
     public Vector2 position;
 }
 
@@ -40,7 +43,7 @@ public class SceneGeometry : MonoBehaviour
     private List<BoxData> boxData;
     private List<LightData> lightData;
 
-    void Start()
+    void Awake()
     {
         Transform[] childObjects = gameObject.GetComponentsInChildren<Transform>(true);
 
@@ -79,11 +82,15 @@ public class SceneGeometry : MonoBehaviour
             if (!sceneLights[i].activeInHierarchy)
                 continue;
 
-            var l = new LightData();
-            l.position = spaceConverter.WorldToTextureSpace(sceneLights[i].transform.position);
-            l.angle = sceneLights[i].transform.rotation.eulerAngles.z * Mathf.PI / 180f;
+            var l = sceneLights[i].GetComponent<Light>();
 
-            lightData.Add(l);
+            if (l)
+            {
+                LightData data = l.GetLightData();
+                data.position = spaceConverter.WorldToTextureSpace(sceneLights[i].transform.position);
+                data.range = data.range * spaceConverter.WorldToTextureScaleFactor().x;
+                lightData.Add(data);
+            }
         }
 
         for (var j = 0; j < sceneCircles.Count; j++)
@@ -93,7 +100,7 @@ public class SceneGeometry : MonoBehaviour
 
             var c = new CircleData();
             c.center = spaceConverter.WorldToTextureSpace(sceneCircles[j].transform.position);
-            c.radius = spaceConverter.WorldToTextureSpace(new Vector2(sceneCircles[j].transform.position.x + sceneCircles[j].radius, 0)).x - c.center.x;
+            c.radius = sceneCircles[j].radius * spaceConverter.WorldToTextureScaleFactor().x;
 
             circleData.Add(c);
         }
@@ -105,9 +112,7 @@ public class SceneGeometry : MonoBehaviour
 
             var b = new BoxData();
             b.center = spaceConverter.WorldToTextureSpace(sceneBoxes[j].transform.position);
-
-            var boxMax = (Vector2)sceneBoxes[j].transform.position + sceneBoxes[j].size * 0.5f;
-            b.extents = spaceConverter.WorldToTextureSpace(boxMax) - b.center;
+            b.extents = sceneBoxes[j].size * 0.5f * spaceConverter.WorldToTextureScaleFactor();
 
             boxData.Add(b);
         }

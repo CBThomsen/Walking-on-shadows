@@ -2,6 +2,9 @@
 
 struct LightData {
     float angle;
+    float range;
+    float intensity;
+    float4 color;
     float2 position;
 };
 
@@ -77,8 +80,8 @@ int TestRayBox(float2 p0, float2 p1, float2 boxMin, float2 boxMax)
 [numthreads(32,32,1)]
 void Raytracer (uint3 id : SV_DispatchThreadID)
 {
-    int intersections = 0;
-    destTexture[id.xy] = float4(1.0, 1.0, 1.0, 0.0);
+    int totalIntersections = 0;
+    destTexture[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
 
     for(int i = 0; i < lights.Length; i++)
     {
@@ -94,19 +97,14 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
         float angle = fmod(atan2(direction.y, -direction.x) + lightAngle + 2 * PI, 2 * PI);
         float dist = sqrt(pow(direction.x, 2) + pow(direction.y, 2));
         float2 directionNormalized = direction / dist;
+        float maxDistance = lights[i].range;
 
-        float maxDistance = 700.0;
-        if(dist > maxDistance)
-            continue;
-                    
+
         for(int j = 0; j < circles.Length; j++)
         {
             CircleData circle = circles[j];   
             //intersections += TestRaySphere(id.xy, directionNormalized, circle.center, circle.radius);
 
-            if(intersections > 0)
-            {
-            }
         }
 
         for(int k = 0; k < boxes.Length; k++)
@@ -116,7 +114,8 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
             float2 boxMin = boxCenter - extents;
             float2 boxMax = boxCenter + extents;
 
-            intersections = TestRayBox(lightPos, float2(x1, y1), boxMin, boxMax);
+            int intersections = TestRayBox(lightPos, float2(x1, y1), boxMin, boxMax);
+            totalIntersections += intersections;
 
             if(intersections > 0)
             {
@@ -175,14 +174,20 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
                     edgeVertices.Append(v);
                 }
             }
+        }
 
-            if(intersections > 0)
-            {
-                float attenuation = (1.0 / (pow(dist / maxDistance, 2)) - 1.0);
-                destTexture[id.xy] *= float4(0.0, 0.0, 0.0, 1.0);
-                destTexture[id.xy] += float4(0.0, 0.0, 0.0, 1.0 * min(0.5, attenuation));
-                destTexture[id.xy] = min(destTexture[id.xy], float4(0.0, 0.0, 0.0, 0.5));
-            }
+        if(totalIntersections > 0)
+        {
+            float attenuation = 1.0;//(1.0 / (pow(dist / maxDistance, 2)) - 1.0);
+            destTexture[id.xy] *= float4(0.0, 0.0, 0.0, 1.0);
+            destTexture[id.xy] += float4(0.0, 0.0, 0.0, 1.0 * min(1.0, attenuation));
+            destTexture[id.xy] *= float4(0.25, 0.25, 0.25, 0.5);
+        } else {
+            /*float constantAtt = 1.0;
+            float linearAtt = 0.0;
+            float quadraticAtt = 0.0;
+            float attenuation = (1.0 / (constantAtt + linearAtt * dist / maxDistance + quadraticAtt * ((dist/maxDistance) * (dist / maxDistance))));
+            destTexture[id.xy] += lights[i].color * lights[i].intensity * attenuation;*/
         }
     }
 }

@@ -4,9 +4,23 @@ public class SpaceConverter : MonoBehaviour
 {
     public Camera cam;
 
+    private Vector2 scaleFactor;
+
     void Awake()
     {
-        //cam.aspect = 1f / 1f;
+        CalculateScaleFactor();
+    }
+
+    private void CalculateScaleFactor()
+    {
+        Vector2 origin = WorldToTextureSpace(Vector2.zero);
+        Vector2 scaledVector = WorldToTextureSpace(Vector2.one) - origin;
+        scaleFactor = scaledVector / Vector2.one;
+    }
+
+    public Vector2 WorldToTextureScaleFactor()
+    {
+        return scaleFactor;
     }
 
     public Vector2 WorldToTextureSpace(Vector2 worldPos)

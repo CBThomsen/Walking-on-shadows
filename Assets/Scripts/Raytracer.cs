@@ -1,5 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.Experimental.Rendering;
+using UnityEngine.Rendering;
 using System.IO;
 using UnityEngine;
 using System.Linq;
@@ -13,6 +15,8 @@ public class Raytracer : MonoBehaviour
     public SpaceConverter spaceConverter;
     public ShadowColliders shadowColliders;
     public ShadowRenderer shadowRenderer;
+
+    public Material litMaterial;
 
     private ComputeBuffer lightBuffer;
     private ComputeBuffer circleBuffer;
@@ -31,6 +35,7 @@ public class Raytracer : MonoBehaviour
 
         SetupRenderTexture();
         shadowRenderer.SetTexture(destTexture);
+        StartCoroutine(AsyncUpdate());
     }
 
     private void onDestroy()
@@ -49,9 +54,12 @@ public class Raytracer : MonoBehaviour
     private void SetRaytracingBuffers()
     {
         LightData[] lightDataArray = this.sceneGeometry.GetLightDataArray();
-        lightBuffer = new ComputeBuffer(lightDataArray.Length, lightDataArray.Length * 3 * sizeof(float));
+        lightBuffer = new ComputeBuffer(lightDataArray.Length, lightDataArray.Length * 9 * sizeof(float));
         lightBuffer.SetData(lightDataArray);
         computeShader.SetBuffer(raytracerKI, "lights", lightBuffer);
+
+        litMaterial.SetFloat("resolution", textureResolution);
+        litMaterial.SetBuffer("lights", lightBuffer);
 
         CircleData[] circleDataArray = this.sceneGeometry.GetCircleDatas();
         if (circleDataArray.Length > 0)
@@ -66,7 +74,7 @@ public class Raytracer : MonoBehaviour
         boxBuffer.SetData(boxDataArray);
         computeShader.SetBuffer(raytracerKI, "boxes", boxBuffer);
 
-        edgeVertexBuffer = new ComputeBuffer(20000, 4 * sizeof(float) + sizeof(int), ComputeBufferType.Append);
+        edgeVertexBuffer = new ComputeBuffer(10000, 4 * sizeof(float) + sizeof(int), ComputeBufferType.Append);
         edgeVertexBuffer.SetCounterValue(0);
         computeShader.SetBuffer(raytracerKI, "edgeVertices", edgeVertexBuffer);
     }
@@ -147,12 +155,40 @@ public class Raytracer : MonoBehaviour
         return corners;
     }
 
-    void Update()
+    private IEnumerator AsyncUpdate()
     {
-        SetRaytracingBuffers();
-        computeShader.Dispatch(raytracerKI, textureResolution / 32, textureResolution / 32, 1);
+        yield return new WaitForEndOfFrame();
+        while (true)
+        {
+            SetRaytracingBuffers();
 
-        edgeVertices = GetEdgeVertices().ToList();
+            bool waitingForGPU = false;
+            computeShader.Dispatch(raytracerKI, textureResolution / 32, textureResolution / 32, 1);
+            edgeVertices = GetEdgeVertices().ToList();
+            UpdateCollider();
+
+            /*AsyncGPUReadback.Request(edgeVertexBuffer, (AsyncGPUReadbackRequest request) =>
+            {
+                int count = GetAppendBufferCount(edgeVertexBuffer);
+                EdgeVertex[] tempEdgeVertices = new EdgeVertex[count];
+                tempEdgeVertices = request.GetData<EdgeVertex>().ToArray();
+                edgeVertices = tempEdgeVertices.ToList();
+                waitingForGPU = false;
+                UpdateCollider();
+            });*/
+
+            yield return new WaitForEndOfFrame();
+            while (waitingForGPU)
+            {
+                yield return new WaitForEndOfFrame();
+            }
+
+            ReleaseBuffers();
+        }
+    }
+
+    void UpdateCollider()
+    {
         shapeEdgeVertices = SortEdgeVerticesByAngle();
         shadowColliders.ResetColliders();
 
@@ -171,15 +207,14 @@ public class Raytracer : MonoBehaviour
             shadowColliders.AddPointsToCollider(worldSpaceCorners);
 
             /*
-            for (var j = 1; j < corners.Count; j++)
-            {
-                Debug.DrawLine(spaceConverter.TextureToWorldSpace(corners[j - 1].position), spaceConverter.TextureToWorldSpace(corners[j].position), Color.magenta, Time.deltaTime);
-            }
+                        for (var j = 1; j < corners.Count; j++)
+                        {
+                            Debug.DrawLine(spaceConverter.TextureToWorldSpace(corners[j - 1].position), spaceConverter.TextureToWorldSpace(corners[j].position), Color.magenta, Time.deltaTime);
+                        }
 
-            Debug.DrawLine(spaceConverter.TextureToWorldSpace(corners[corners.Count - 1].position), spaceConverter.TextureToWorldSpace(corners[0].position), Color.magenta, Time.deltaTime);*/
+                        Debug.DrawLine(spaceConverter.TextureToWorldSpace(corners[corners.Count - 1].position), spaceConverter.TextureToWorldSpace(corners[0].position), Color.magenta, Time.deltaTime);
+                    */
         }
-
-        ReleaseBuffers();
     }
 
     private void OnDrawGizmos()

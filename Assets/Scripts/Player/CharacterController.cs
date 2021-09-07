@@ -12,7 +12,7 @@ public class CharacterController : InputReciever
     private float moveSpeed = 250f;
 
     [SerializeField]
-    private float maxSlopeAngle = 35f;
+    private float maxSlopeAngle = 45f;
 
     [Range(0, .3f)]
     [SerializeField] private float movementSmoothing = .05f;
@@ -23,7 +23,7 @@ public class CharacterController : InputReciever
     [SerializeField] private LayerMask groundLayerMask;
     [SerializeField] private Transform groundTransform;
 
-    private const float groundedRadius = 0.75f;
+    private const float groundedRadius = 0.3f;
     private bool grounded;
     private float slopeAngle;
     private Rigidbody2D body;
@@ -52,8 +52,14 @@ public class CharacterController : InputReciever
 
         float newSlopeAngle = float.MaxValue;
 
-        RaycastHit2D[] hitsLeftLeg = Physics2D.RaycastAll(transform.position + Vector3.left * 0.3f, -transform.up, groundedRadius, groundLayerMask);
-        RaycastHit2D[] hitsRightLeg = Physics2D.RaycastAll(transform.position + Vector3.right * 0.3f, -transform.up, groundedRadius, groundLayerMask);
+        Vector3 leftLeg = transform.position + Vector3.left * 0.2f;
+        RaycastHit2D[] hitsLeftLeg = Physics2D.RaycastAll(leftLeg, -transform.up, groundedRadius, groundLayerMask);
+        Debug.DrawLine(leftLeg, leftLeg + -transform.up * groundedRadius);
+
+        Vector3 rightLeg = transform.position + Vector3.right * 0.2f;
+        RaycastHit2D[] hitsRightLeg = Physics2D.RaycastAll(rightLeg, -transform.up, groundedRadius, groundLayerMask);
+        Debug.DrawLine(rightLeg, rightLeg + -transform.up * groundedRadius);
+
         IEnumerable<RaycastHit2D> allHits = hitsLeftLeg.Concat(hitsRightLeg);
 
         foreach (RaycastHit2D hit in allHits)

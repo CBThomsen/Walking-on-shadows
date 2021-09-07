@@ -10,7 +10,7 @@ public class ShadowRenderer : MonoBehaviour
     public void SetTexture(RenderTexture texture)
     {
         MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
-        meshRenderer.material.SetTexture("_MainTex", texture);
+        meshRenderer.sharedMaterial.SetTexture("_MainTex", texture);
     }
 
 }

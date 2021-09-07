@@ -8,6 +8,7 @@ public class ShadowSystem : MonoBehaviour
     public ShadowRenderer shadowRenderer;
     public ComputeBuffers computeBuffers;
     public ShadowColliders shadowColliders;
+    public Color shadowColor;
 
     private EdgeVertex[] shadowEdgeVertices = new EdgeVertex[ComputeBuffers.EDGEVERTEX_BUFFER_SIZE];
 
@@ -32,6 +33,7 @@ public class ShadowSystem : MonoBehaviour
         computeShader.SetBuffer(shadowComputeShaderKI, "lights", lightBuffer);
         computeShader.SetBuffer(shadowComputeShaderKI, "boxes", boxBuffer);
         computeShader.SetBuffer(shadowComputeShaderKI, "edgeVertices", edgeVertexBuffer);
+        computeShader.SetVector("shadowColor", shadowColor);
 
         computeShader.Dispatch(shadowComputeShaderKI, textureResolution / 32, textureResolution / 32, 1);
     }

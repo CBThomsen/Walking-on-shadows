@@ -6,6 +6,7 @@ public class LightSystem : MonoBehaviour
 {
     public Material spriteLitMaterial;
     public ComputeBuffers computeBuffers;
+    public Color ambientColor;
 
     void Start()
     {
@@ -14,6 +15,8 @@ public class LightSystem : MonoBehaviour
 
     void Update()
     {
+
+        spriteLitMaterial.SetVector("ambient", ambientColor);
         spriteLitMaterial.SetBuffer("lights", computeBuffers.GetLightBuffer());
     }
 }

@@ -20,19 +20,19 @@ struct BoxData {
 
 struct EdgeVertex {
     float2 position;
-    float2 roundedPos;
     int shapeIndex;
 };
 
-static int2 searchDirections[] = { int2(1, 0), int2(0, 1), int2(-1, 0), int2(0, -1) };
+//static float2 searchDirections[] = { float2(1.0, 0.0), float2(0.0, 1.0), float2(-1.0, 0.0), float2(0.0, -1.0) };
 
 RWStructuredBuffer<LightData> lights;
 RWStructuredBuffer<CircleData> circles;
 RWStructuredBuffer<BoxData> boxes;
 
 RWTexture2D<float4> destTexture;
-RWTexture2D<float2> edgePositionTexture;
 AppendStructuredBuffer<EdgeVertex> edgeVertices;
+
+float4 shadowColor;
 
 static float EPSILON = 0.00001;
 static float PI = 3.14;
@@ -81,33 +81,28 @@ int TestRayBox(float2 p0, float2 p1, float2 boxMin, float2 boxMax)
 void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
 {
     int totalIntersections = 0;
+    float2 pixelPos = float2(id.x, id.y);
+
     destTexture[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
 
     for(int i = 0; i < lights.Length; i++)
     {
-        float x1 = id.x;
-        float y1 = id.y;
-
         float2 lightPos = lights[i].position;
-        float lightAngle = lights[i].angle;
-        float x2 = lightPos.x;
-        float y2 = lightPos.y;
+        float lightRange = lights[i].range;
         
-        float2 direction = float2(x2 - x1, y2 - y1);
-        float angle = fmod(atan2(direction.y, -direction.x) + lightAngle + 2 * PI, 2 * PI);
-        float dist = sqrt(pow(direction.x, 2) + pow(direction.y, 2));
-        float2 directionNormalized = direction / dist;
+        float2 direction = float2(lightPos.x - pixelPos.x, lightPos.y - pixelPos.y);
+        float distance = sqrt(pow(direction.x, 2) + pow(direction.y, 2));
+        
+        //float lightAngle = lights[i].angle;
+        //float angle = fmod(atan2(direction.y, -direction.x) + lightAngle + 2 * PI, 2 * PI);
 
-        float maxDistance = lights[i].range;
-
-        if(dist > maxDistance)
-            continue;
+        /*if(distance > lightRange)
+            continue;*/
 
         for(int j = 0; j < circles.Length; j++)
         {
             CircleData circle = circles[j];   
             //intersections += TestRaySphere(id.xy, directionNormalized, circle.center, circle.radius);
-
         }
 
         for(int k = 0; k < boxes.Length; k++)
@@ -117,7 +112,7 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
             float2 boxMin = boxCenter - extents;
             float2 boxMax = boxCenter + extents;
 
-            int intersections = TestRayBox(lightPos, float2(x1, y1), boxMin, boxMax);
+            int intersections = TestRayBox(lightPos, pixelPos, boxMin, boxMax);
             totalIntersections += intersections;
 
             if(intersections > 0)
@@ -125,20 +120,20 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
                 //Find more accurate value rather than rounded off value
                 float2 dir = float2(0.0, 0.0);
                 
-                if(TestRayBox(lightPos, float2(x1 + 1.0, y1), boxMin, boxMax) == 0)
+                if(TestRayBox(lightPos, float2(pixelPos.x + 1.0, pixelPos.y), boxMin, boxMax) == 0)
                 {
                     dir.x = 1.0;
                 } 
-                else if(TestRayBox(lightPos, float2(x1 - 1.0, y1), boxMin, boxMax) == 0)
+                else if(TestRayBox(lightPos, float2(pixelPos.x - 1.0, pixelPos.y), boxMin, boxMax) == 0)
                 {
                     dir.x = -1.0;
                 }
 
-                if(TestRayBox(lightPos, float2(x1, y1 + 1.0), boxMin, boxMax) == 0)
+                if(TestRayBox(lightPos, float2(pixelPos.x, pixelPos.y + 1.0), boxMin, boxMax) == 0)
                 {
                     dir.y = 1.0;
                 }
-                else if(TestRayBox(lightPos, float2(x1, y1 - 1.0), boxMin, boxMax) == 0)
+                else if(TestRayBox(lightPos, float2(pixelPos.x, pixelPos.y - 1.0), boxMin, boxMax) == 0)
                 {                
                     dir.y = -1.0;
                 }
@@ -149,30 +144,29 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
                 if(abs(dir.x) > 0.0 || abs(dir.y) > 0.0)
                 {
                     bool intersecting = true; 
-                    float stepSize = 0.001;
+                    float stepSize = 0.01;
                     float steps = 0.0;
 
-                    while(intersecting == true && steps < 1000.0)
+                    while(intersecting == true && steps < 100.0)
                     {
                         steps += 1.0;
-                        intersecting = TestRayBox(lightPos, float2(x1 + stepSize * steps * dir.x, y1 + stepSize * steps * dir.y), boxMin, boxMax) > 0;
+                        intersecting = TestRayBox(lightPos, pixelPos + dir * stepSize * steps, boxMin, boxMax) > 0;
                     }
 
-                    vertex = float2(x1 + stepSize * steps * dir.x, y1 + stepSize * steps * dir.y);
+                    vertex = pixelPos + dir * stepSize * steps;
                     isEdgeVertex = true;
                 }
 
-                if(round(dist) == round(maxDistance))
+                /*if(round(distance) == round(lightRange))
                 {
                     isEdgeVertex = true;
-                    vertex = float2(x2 - directionNormalized.x * maxDistance, y2 - directionNormalized.y * maxDistance);
-                }
+                    vertex = pixelPos - direction / distance * lightRange;
+                }*/
 
                 if(isEdgeVertex)
                 {
                     EdgeVertex v;
                     v.position = vertex;
-                    v.roundedPos = float2(x1, y1);
                     v.shapeIndex = i * max(lights.Length, boxes.Length) + k;
                     edgeVertices.Append(v);
                 }
@@ -181,10 +175,8 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
 
         if(totalIntersections > 0)
         {
-            float attenuation = 1.0;//(1.0 / (pow(dist / maxDistance, 2)) - 1.0);
-            destTexture[id.xy] *= float4(0.0, 0.0, 0.0, 1.0);
-            destTexture[id.xy] += float4(0.0, 0.0, 0.0, 1.0 * min(1.0, attenuation));
-            destTexture[id.xy] *= float4(0.25, 0.25, 0.25, 0.5);
+            destTexture[id.xy] = shadowColor;
+
         } else {
             /*float constantAtt = 1.0;
             float linearAtt = 0.0;

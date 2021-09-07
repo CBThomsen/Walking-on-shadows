@@ -27,7 +27,6 @@ public struct LightData
 public struct EdgeVertex
 {
     public Vector2 position;
-    public Vector2 roundedPosition;
     public int shapeIndex;
 }
 

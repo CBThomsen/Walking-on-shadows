@@ -7,8 +7,11 @@ Shader "Sprites/CustomLighting"
     SubShader
     {
         Tags { "RenderType"="Transparent" "Queue"="Transparent" }
-        Blend SrcAlpha OneMinusSrcAlpha
+        Blend SrcAlpha OneMinusSrcAlpha        
+        ZTest Off
         ZWrite Off
+        Cull Off
+
 
         Pass
         {
@@ -41,6 +44,7 @@ Shader "Sprites/CustomLighting"
             
             StructuredBuffer<LightData> lights;
             float resolution;
+            float4 ambient;
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
@@ -56,30 +60,25 @@ Shader "Sprites/CustomLighting"
             fixed4 frag (v2f vi) : SV_Target
             {
                 fixed4 col = tex2D(_MainTex, vi.uv);
+                float2 pixelPos = float2(vi.vertex.x, vi.vertex.y);
 
-                float4 ambient = float4(0.25, 0.25, 0.25, 0.25);
                 float4 diffuse = float4(0.0, 0.0, 0.0, 0.0);
                 for(int i = 0; i < lights.Length; i++)
-                {                
+                {
                     float2 lightPos = lights[i].position;
-                    float x1 = vi.vertex.x;
-                    float y1 = vi.vertex.y;
-                    float x2 = lightPos.x;
-                    float y2 = resolution - lightPos.y;
+                    lightPos.y = resolution - lightPos.y;
+                    float lightRange = lights[i].range;
                     
-                    float2 direction = float2(x2 - x1, y2 - y1);
-                    //float angle = fmod(atan2(direction.y, -direction.x) + lightAngle + 2 * PI, 2 * PI);
-                    float dist = sqrt(pow(direction.x, 2) + pow(direction.y, 2));
-                    float2 directionNormalized = direction / dist;
-                    float maxDistance = lights[i].range;
+                    float2 direction = float2(lightPos.x - pixelPos.x, lightPos.y - pixelPos.y);
+                    float distance = sqrt(pow(direction.x, 2) + pow(direction.y, 2));
                     
-                    if(dist > maxDistance)
+                    if(distance > lightRange)
                         continue;
                     
                     float constantAtt = 1.0;
                     float linearAtt = 0.0;
                     float quadraticAtt = 3.0;
-                    float attenuation = (1.0 / (constantAtt + linearAtt * dist / maxDistance + quadraticAtt * ((dist/maxDistance) * (dist / maxDistance))));
+                    float attenuation = (1.0 / (constantAtt + linearAtt * distance / lightRange + quadraticAtt * ((distance/lightRange) * (distance / lightRange))));
                     diffuse += lights[i].color * lights[i].intensity * attenuation;
                 }
 

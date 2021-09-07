@@ -2,35 +2,32 @@ using UnityEngine;
 
 public class SpaceConverter : MonoBehaviour
 {
-    public Camera cam;
+    private static Camera cam { get { return Camera.main; } }
+    private static Vector2 scaleFactor;
 
-    private Vector2 scaleFactor;
-
-    void Awake()
-    {
-        CalculateScaleFactor();
-    }
-
-    private void CalculateScaleFactor()
+    private static void CalculateScaleFactor()
     {
         Vector2 origin = WorldToTextureSpace(Vector2.zero);
         Vector2 scaledVector = WorldToTextureSpace(Vector2.one) - origin;
         scaleFactor = scaledVector / Vector2.one;
     }
 
-    public Vector2 WorldToTextureScaleFactor()
+    public static Vector2 WorldToTextureScaleFactor()
     {
+        if (scaleFactor == Vector2.zero)
+            CalculateScaleFactor();
+
         return scaleFactor;
     }
 
-    public Vector2 WorldToTextureSpace(Vector2 worldPos)
+    public static Vector2 WorldToTextureSpace(Vector2 worldPos)
     {
-        return cam.WorldToViewportPoint(worldPos) * Raytracer.textureResolution;
+        return cam.WorldToViewportPoint(worldPos) * ShadowSystem.textureResolution;
     }
 
-    public Vector2 TextureToWorldSpace(Vector2 texturePos)
+    public static Vector2 TextureToWorldSpace(Vector2 texturePos)
     {
-        Vector3 viewPortPos = new Vector3(1f - (float)texturePos.x / (float)Raytracer.textureResolution, 1f - (float)texturePos.y / (float)Raytracer.textureResolution, cam.transform.position.z);
+        Vector3 viewPortPos = new Vector3(1f - (float)texturePos.x / (float)ShadowSystem.textureResolution, 1f - (float)texturePos.y / (float)ShadowSystem.textureResolution, cam.transform.position.z);
         Vector2 result = cam.ViewportToWorldPoint(viewPortPos);
         return result;
     }

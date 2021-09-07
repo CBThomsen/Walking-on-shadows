@@ -1,4 +1,4 @@
-﻿#pragma kernel Raytracer
+﻿#pragma kernel ShadowComputeShader
 
 struct LightData {
     float angle;
@@ -78,7 +78,7 @@ int TestRayBox(float2 p0, float2 p1, float2 boxMin, float2 boxMax)
 }
 
 [numthreads(32,32,1)]
-void Raytracer (uint3 id : SV_DispatchThreadID)
+void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
 {
     int totalIntersections = 0;
     destTexture[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
@@ -97,8 +97,11 @@ void Raytracer (uint3 id : SV_DispatchThreadID)
         float angle = fmod(atan2(direction.y, -direction.x) + lightAngle + 2 * PI, 2 * PI);
         float dist = sqrt(pow(direction.x, 2) + pow(direction.y, 2));
         float2 directionNormalized = direction / dist;
+
         float maxDistance = lights[i].range;
 
+        if(dist > maxDistance)
+            continue;
 
         for(int j = 0; j < circles.Length; j++)
         {

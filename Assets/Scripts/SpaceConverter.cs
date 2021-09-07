@@ -22,12 +22,12 @@ public class SpaceConverter : MonoBehaviour
 
     public static Vector2 WorldToTextureSpace(Vector2 worldPos)
     {
-        return cam.WorldToViewportPoint(worldPos) * ShadowSystem.textureResolution;
+        return cam.WorldToViewportPoint(worldPos) * (Vector2)ShadowSystem.textureResolution;
     }
 
     public static Vector2 TextureToWorldSpace(Vector2 texturePos)
     {
-        Vector3 viewPortPos = new Vector3(1f - (float)texturePos.x / (float)ShadowSystem.textureResolution, 1f - (float)texturePos.y / (float)ShadowSystem.textureResolution, cam.transform.position.z);
+        Vector3 viewPortPos = new Vector3((float)texturePos.x / (float)ShadowSystem.textureResolution.x, (float)texturePos.y / (float)ShadowSystem.textureResolution.y, cam.transform.position.z);
         Vector2 result = cam.ViewportToWorldPoint(viewPortPos);
         return result;
     }

@@ -22,6 +22,7 @@ public struct LightData
     public float intensity;
     public Vector4 color;
     public Vector2 position;
+    public int isOn;
 }
 
 public struct EdgeVertex

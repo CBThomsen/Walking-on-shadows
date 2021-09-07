@@ -12,52 +12,50 @@ public class Player : MonoBehaviour
 
     private InputReciever inputReciever;
 
-    private bool controllingPlayer;
-
     void Start()
     {
-        controllingPlayer = true;
         inputReciever = GetComponent<InputReciever>();
     }
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
-        {
-            InputReciever newInputReciever = FindNewInputReciever();
-            if (newInputReciever != null)
-            {
-                inputReciever = newInputReciever;
-            }
-        }
-
         if (Input.GetMouseButton(0))
             inputReciever.OnMouseDown();
+
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            Light light = FindOverlappingComponent<Light>();
+
+            if (light)
+                light.ToggleOnOff();
+        }
 
         inputReciever.OnHorizontalKeyDown(Input.GetAxisRaw("Horizontal"));
         inputReciever.OnVerticalKeyDown(Input.GetAxisRaw("Vertical"));
 
         if (Input.GetButtonDown("Jump"))
+        {
             inputReciever.OnJumpDown();
+        }
     }
 
-    private InputReciever FindNewInputReciever()
+    private T FindOverlappingComponent<T>()
     {
-        Vector3 mousePos = Input.mousePosition;
+        /*Vector3 mousePos = Input.mousePosition;
         mousePos.z = -Camera.main.transform.position.z;
-        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(mousePos);
+        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(mousePos);*/
 
-        Collider2D[] overlappingColliders = Physics2D.OverlapCircleAll(mouseWorldPos, 0.25f);
-        InputReciever newInputReciever = null;
+        Collider2D[] overlappingColliders = Physics2D.OverlapCircleAll(transform.position, 0.5f);
+        T component;
 
         for (var i = 0; i < overlappingColliders.Length; i++)
         {
-            newInputReciever = overlappingColliders[i].GetComponent<InputReciever>();
+            component = overlappingColliders[i].GetComponent<T>();
 
-            if (newInputReciever != null)
-                return newInputReciever;
+            if (component != null)
+                return component;
         }
 
-        return newInputReciever;
+        return default(T);
     }
 }

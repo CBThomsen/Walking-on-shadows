@@ -40,10 +40,12 @@ Shader "Sprites/CustomLighting"
                 float intensity;
                 float4 color;
                 float2 position;
+                int isOn;
             };
             
             StructuredBuffer<LightData> lights;
-            float resolution;
+            int resolutionX;
+            int resolutionY;
             float4 ambient;
 
             sampler2D _MainTex;
@@ -63,10 +65,14 @@ Shader "Sprites/CustomLighting"
                 float2 pixelPos = float2(vi.vertex.x, vi.vertex.y);
 
                 float4 diffuse = float4(0.0, 0.0, 0.0, 0.0);
+
                 for(int i = 0; i < lights.Length; i++)
-                {
+                {   
+                    if(lights[i].isOn == 0)
+                        continue;
+
                     float2 lightPos = lights[i].position;
-                    lightPos.y = resolution - lightPos.y;
+                    lightPos.y = resolutionY - lightPos.y;
                     float lightRange = lights[i].range;
                     
                     float2 direction = float2(lightPos.x - pixelPos.x, lightPos.y - pixelPos.y);

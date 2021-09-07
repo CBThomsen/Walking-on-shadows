@@ -13,6 +13,8 @@ public class Light : MonoBehaviour
     [SerializeField]
     private float intensity;
 
+    private bool isOn = true;
+
     private LightData data = new LightData();
 
     public LightData GetLightData()
@@ -21,8 +23,14 @@ public class Light : MonoBehaviour
         data.color = (Vector4)color;
         data.range = range;
         data.intensity = intensity;
+        data.isOn = (isOn && gameObject.activeInHierarchy) ? 1 : 0;
 
         return data;
+    }
+
+    public void ToggleOnOff()
+    {
+        isOn = !isOn;
     }
 
 }

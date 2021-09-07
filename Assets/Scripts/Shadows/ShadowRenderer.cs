@@ -7,6 +7,10 @@ using System.Linq;
 public class ShadowRenderer : MonoBehaviour
 {
 
+    private void Start()
+    {
+    }
+
     public RenderTexture CreateRenderTexture(int resolutionX, int resolutionY)
     {
         RenderTexture texture = new RenderTexture(resolutionX, resolutionY, 24, RenderTextureFormat.ARGB32);

@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ComputeBuffers : MonoBehaviour
 {
-    public const int EDGEVERTEX_BUFFER_SIZE = 10000;
+    public const int EDGEVERTEX_BUFFER_SIZE = 50000;
 
     private ComputeBuffer lightBuffer;
     private ComputeBuffer boxBuffer;
@@ -25,7 +25,7 @@ public class ComputeBuffers : MonoBehaviour
     private void CreateComputeBuffers()
     {
         LightData[] lightDataArray = SceneGeometry.instance.GetLightDataArray();
-        lightBuffer = new ComputeBuffer(lightDataArray.Length, lightDataArray.Length * 9 * sizeof(float));
+        lightBuffer = new ComputeBuffer(lightDataArray.Length, 9 * sizeof(float) + sizeof(int));
 
         BoxData[] boxDataArray = SceneGeometry.instance.GetBoxDatas();
         boxBuffer = new ComputeBuffer(boxDataArray.Length, boxDataArray.Length * 4 * sizeof(float));

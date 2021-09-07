@@ -10,12 +10,12 @@ public class LightSystem : MonoBehaviour
 
     void Start()
     {
-        spriteLitMaterial.SetFloat("resolution", ShadowSystem.textureResolution);
+        spriteLitMaterial.SetInt("resolutionX", ShadowSystem.textureResolution.x);
+        spriteLitMaterial.SetInt("resolutionY", ShadowSystem.textureResolution.y);
     }
 
     void Update()
     {
-
         spriteLitMaterial.SetVector("ambient", ambientColor);
         spriteLitMaterial.SetBuffer("lights", computeBuffers.GetLightBuffer());
     }

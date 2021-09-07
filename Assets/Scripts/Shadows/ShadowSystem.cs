@@ -12,14 +12,15 @@ public class ShadowSystem : MonoBehaviour
 
     private EdgeVertex[] shadowEdgeVertices = new EdgeVertex[ComputeBuffers.EDGEVERTEX_BUFFER_SIZE];
 
-    public static int textureResolution = 1024;
+    public static Vector2Int textureResolution = new Vector2Int(1920, 1080);
     private int shadowComputeShaderKI;
 
     void Start()
     {
-        RenderTexture renderTexture = shadowRenderer.CreateRenderTexture(textureResolution, textureResolution);
+        RenderTexture renderTexture = shadowRenderer.CreateRenderTexture(textureResolution.x, textureResolution.y);
         shadowRenderer.SetTexture(renderTexture);
         computeShader.SetTexture(shadowComputeShaderKI, "destTexture", renderTexture);
+        computeShader.SetInts("resolution", new int[] { textureResolution.x, textureResolution.y });
 
         shadowComputeShaderKI = computeShader.FindKernel("ShadowComputeShader");
     }
@@ -35,7 +36,7 @@ public class ShadowSystem : MonoBehaviour
         computeShader.SetBuffer(shadowComputeShaderKI, "edgeVertices", edgeVertexBuffer);
         computeShader.SetVector("shadowColor", shadowColor);
 
-        computeShader.Dispatch(shadowComputeShaderKI, textureResolution / 32, textureResolution / 32, 1);
+        computeShader.Dispatch(shadowComputeShaderKI, textureResolution.x / 32, textureResolution.y / 30, 1);
     }
 
     void Update()
@@ -46,6 +47,12 @@ public class ShadowSystem : MonoBehaviour
         ComputeBuffer edgeVertexBuffer = computeBuffers.GetEdgeVertexBuffer();
         int vertexCount = computeBuffers.GetAppendBufferCount(edgeVertexBuffer);
         edgeVertexBuffer.GetData(shadowEdgeVertices);
+
+        if (vertexCount > ComputeBuffers.EDGEVERTEX_BUFFER_SIZE)
+        {
+            Debug.LogWarning("Found " + vertexCount + " edge vertices. Max is " + ComputeBuffers.EDGEVERTEX_BUFFER_SIZE + "!!");
+            vertexCount = ComputeBuffers.EDGEVERTEX_BUFFER_SIZE;
+        }
 
         shadowColliders.UpdateColliders(shadowEdgeVertices, vertexCount);
     }

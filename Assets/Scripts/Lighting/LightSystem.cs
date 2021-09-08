@@ -5,6 +5,8 @@ using UnityEngine;
 public class LightSystem : MonoBehaviour
 {
     public Material spriteLitMaterial;
+    public Material spriteLitMaterialNoShadow;
+
     public ComputeBuffers computeBuffers;
     public ShadowRenderer shadowRenderer;
     public Color ambientColor;
@@ -13,12 +15,18 @@ public class LightSystem : MonoBehaviour
     {
         spriteLitMaterial.SetInt("resolutionX", ShadowSystem.textureResolution.x);
         spriteLitMaterial.SetInt("resolutionY", ShadowSystem.textureResolution.y);
-        spriteLitMaterial.SetTexture("ShadowTex", shadowRenderer.lightTexture);
+        spriteLitMaterial.SetTexture("LightTex", shadowRenderer.lightTexture);
+
+        spriteLitMaterialNoShadow.SetInt("resolutionX", ShadowSystem.textureResolution.x);
+        spriteLitMaterialNoShadow.SetInt("resolutionY", ShadowSystem.textureResolution.y);
+        spriteLitMaterialNoShadow.SetTexture("LightTex", shadowRenderer.lightTexture);
     }
 
     void Update()
     {
         spriteLitMaterial.SetVector("ambient", ambientColor);
-        spriteLitMaterial.SetBuffer("lights", computeBuffers.GetLightBuffer());
+
+        spriteLitMaterialNoShadow.SetVector("ambient", ambientColor);
+        spriteLitMaterialNoShadow.SetBuffer("lights", computeBuffers.GetLightBuffer());
     }
 }

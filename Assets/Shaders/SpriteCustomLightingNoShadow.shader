@@ -1,4 +1,4 @@
-Shader "Sprites/CustomLighting"
+Shader "Sprites/CustomLightingNoShadow"
 {
     Properties
     {
@@ -49,7 +49,6 @@ Shader "Sprites/CustomLighting"
             float4 ambient;
 
             sampler2D _MainTex;
-            sampler2D LightTex;
             float4 _MainTex_ST;
 
             v2f vert (appdata v)
@@ -65,10 +64,31 @@ Shader "Sprites/CustomLighting"
             {
                 fixed4 col = tex2D(_MainTex, vi.uv);
                 float2 pixelPos = float2(vi.vertex.x, vi.vertex.y);
+                float4 diffuse = float4(0.0, 0.0, 0.0, 0.0);
 
-                float4 lightColor = tex2D(LightTex, float2(pixelPos.x / float(resolutionX), 1.0 - pixelPos.y / float(resolutionY)));
-                
-                return col * lightColor + col * ambient;
+                for(int i = 0; i < lights.Length; i++)
+                {   
+                    if(lights[i].isOn == 0)
+                        continue;
+
+                    float2 lightPos = lights[i].position;
+                    lightPos.y = resolutionY - lightPos.y;
+                    float lightRange = lights[i].range;
+                    
+                    float2 direction = float2(lightPos.x - pixelPos.x, lightPos.y - pixelPos.y);
+                    float distance = sqrt(pow(direction.x, 2) + pow(direction.y, 2));
+                    
+                    if(distance > lightRange)
+                        continue;
+                    
+                    float constantAtt = 1.0;
+                    float linearAtt = 0.0;
+                    float quadraticAtt = 3.0;
+                    float attenuation = (1.0 / (constantAtt + linearAtt * distance / lightRange + quadraticAtt * ((distance/lightRange) * (distance / lightRange))));
+                    diffuse += lights[i].color * lights[i].intensity * attenuation;
+                }
+
+                return col * ambient + col * diffuse;
             }
             ENDCG
         }

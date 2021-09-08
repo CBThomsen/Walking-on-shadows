@@ -1087,7 +1087,7 @@ MonoBehaviour:
   shadowRenderer: {fileID: 2087800266}
   computeBuffers: {fileID: 559227675}
   shadowColliders: {fileID: 156287729}
-  shadowColor: {r: 0, g: 0, b: 0, a: 1}
+  shadowColor: {r: 0, g: 0, b: 0, a: 0.5176471}
 --- !u!114 &559227675
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1403,7 +1403,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spriteLitMaterial: {fileID: 2100000, guid: 7533e73fc3efe334d987f4d241f227b8, type: 2}
   computeBuffers: {fileID: 559227675}
-  ambientColor: {r: 0, g: 0, b: 0, a: 1}
+  shadowRenderer: {fileID: 2087800266}
+  ambientColor: {r: 0.35577607, g: 0.36775205, b: 0.3679245, a: 0.49803922}
 --- !u!1 &815666048
 GameObject:
   m_ObjectHideFlags: 0
@@ -3207,7 +3208,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   color: {r: 0.8470972, g: 0.4198113, b: 1, a: 1}
-  range: 5
+  range: 20
   intensity: 1
 --- !u!114 &1798608222
 MonoBehaviour:
@@ -3768,7 +3769,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2087800263
 Transform:
   m_ObjectHideFlags: 0
@@ -3802,7 +3803,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a45adcab5476baa4393a6384de29a769, type: 2}
+  - {fileID: 2100000, guid: cf170e978e2c81847afd8f231dd78cd2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -3844,3 +3845,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f1f55214e548cb42b36836d47b3f1b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  shadowTexture: {fileID: 0}
+  lightTexture: {fileID: 0}

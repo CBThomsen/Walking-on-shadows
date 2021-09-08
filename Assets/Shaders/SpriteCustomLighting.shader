@@ -47,15 +47,22 @@ Shader "Sprites/CustomLighting"
             int resolutionX;
             int resolutionY;
             float4 ambient;
+            float4 orgVertex;
+            float2 shadowUV;
 
             sampler2D _MainTex;
+            sampler2D ShadowTex;
             float4 _MainTex_ST;
+            float4 ShadowTex_ST;
 
             v2f vert (appdata v)
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+
+                shadowUV = TRANSFORM_TEX(v.uv, ShadowTex);
+
                 return o;
             }
 
@@ -64,9 +71,9 @@ Shader "Sprites/CustomLighting"
                 fixed4 col = tex2D(_MainTex, vi.uv);
                 float2 pixelPos = float2(vi.vertex.x, vi.vertex.y);
 
-                float4 diffuse = float4(0.0, 0.0, 0.0, 0.0);
+                float4 lightColor = tex2D(ShadowTex, float2(pixelPos.x / float(resolutionX), 1.0 - pixelPos.y / float(resolutionY)));
 
-                for(int i = 0; i < lights.Length; i++)
+                /*for(int i = 0; i < lights.Length; i++)
                 {   
                     if(lights[i].isOn == 0)
                         continue;
@@ -86,9 +93,9 @@ Shader "Sprites/CustomLighting"
                     float quadraticAtt = 3.0;
                     float attenuation = (1.0 / (constantAtt + linearAtt * distance / lightRange + quadraticAtt * ((distance/lightRange) * (distance / lightRange))));
                     diffuse += lights[i].color * lights[i].intensity * attenuation;
-                }
+                }*/
 
-                return col * diffuse + col * ambient;
+                return col * lightColor + col * ambient;
             }
             ENDCG
         }

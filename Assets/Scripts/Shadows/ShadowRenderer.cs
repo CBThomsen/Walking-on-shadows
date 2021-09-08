@@ -6,6 +6,8 @@ using System.Linq;
 
 public class ShadowRenderer : MonoBehaviour
 {
+    public RenderTexture shadowTexture;
+    public RenderTexture lightTexture;
 
     private void Start()
     {
@@ -15,13 +17,15 @@ public class ShadowRenderer : MonoBehaviour
         transform.localScale = scale;
     }
 
-    public RenderTexture CreateRenderTexture(int resolutionX, int resolutionY)
+    public void CreateRenderTextures(int resolutionX, int resolutionY)
     {
-        RenderTexture texture = new RenderTexture(resolutionX, resolutionY, 0, RenderTextureFormat.ARGB32);
-        texture.enableRandomWrite = true;
-        texture.Create();
+        shadowTexture = new RenderTexture(resolutionX, resolutionY, 0, RenderTextureFormat.ARGB32);
+        shadowTexture.enableRandomWrite = true;
+        shadowTexture.Create();
 
-        return texture;
+        lightTexture = new RenderTexture(resolutionX, resolutionY, 0, RenderTextureFormat.ARGB32);
+        lightTexture.enableRandomWrite = true;
+        lightTexture.Create();
     }
 
     public void SetTexture(RenderTexture texture)

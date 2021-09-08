@@ -17,9 +17,12 @@ public class ShadowSystem : MonoBehaviour
 
     void Start()
     {
-        RenderTexture renderTexture = shadowRenderer.CreateRenderTexture(textureResolution.x, textureResolution.y);
-        shadowRenderer.SetTexture(renderTexture);
-        computeShader.SetTexture(shadowComputeShaderKI, "destTexture", renderTexture);
+        shadowRenderer.CreateRenderTextures(textureResolution.x, textureResolution.y);
+
+
+        shadowRenderer.SetTexture(shadowRenderer.lightTexture);
+        computeShader.SetTexture(shadowComputeShaderKI, "shadowTexture", shadowRenderer.shadowTexture);
+        computeShader.SetTexture(shadowComputeShaderKI, "lightTexture", shadowRenderer.lightTexture);
         computeShader.SetInts("resolution", new int[] { textureResolution.x, textureResolution.y });
 
         shadowComputeShaderKI = computeShader.FindKernel("ShadowComputeShader");

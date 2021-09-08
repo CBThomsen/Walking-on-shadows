@@ -30,7 +30,8 @@ RWStructuredBuffer<LightData> lights;
 RWStructuredBuffer<CircleData> circles;
 RWStructuredBuffer<BoxData> boxes;
 
-RWTexture2D<float4> destTexture;
+RWTexture2D<float4> shadowTexture;
+RWTexture2D<float4> lightTexture;
 AppendStructuredBuffer<EdgeVertex> edgeVertices;
 
 float4 shadowColor;
@@ -82,27 +83,29 @@ int TestRayBox(float2 p0, float2 p1, float2 boxMin, float2 boxMax)
 [numthreads(32,30,1)]
 void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
 {
-    int totalIntersections = 0;
     float2 pixelPos = float2(id.x, id.y);
 
-    destTexture[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
+    shadowTexture[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
+    lightTexture[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
 
     for(int i = 0; i < lights.Length; i++)
     {
         if(lights[i].isOn == 0)
             continue;
 
+        int totalIntersections = 0;
+
         float2 lightPos = lights[i].position;
         float lightRange = lights[i].range;
         
         float2 direction = float2(lightPos.x - pixelPos.x, lightPos.y - pixelPos.y);
         float distance = sqrt(pow(direction.x, 2) + pow(direction.y, 2));
+
+        if(distance > lightRange)
+            continue;
         
         //float lightAngle = lights[i].angle;
         //float angle = fmod(atan2(direction.y, -direction.x) + lightAngle + 2 * PI, 2 * PI);
-
-        if(distance > lightRange * 2.5)
-            continue;
 
         for(int j = 0; j < circles.Length; j++)
         {
@@ -176,19 +179,29 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
                     v.shapeIndex = i * max(lights.Length, boxes.Length) + k;
                     edgeVertices.Append(v);
                 }
+            } else {
             }
         }
 
         if(totalIntersections > 0)
         {
-            destTexture[id.xy] = shadowColor;
-
+            //shadowTexture[id.xy] = shadowColor;
         } else {
-            /*float constantAtt = 1.0;
-            float linearAtt = 0.0;
-            float quadraticAtt = 0.0;
-            float attenuation = (1.0 / (constantAtt + linearAtt * dist / maxDistance + quadraticAtt * ((dist/maxDistance) * (dist / maxDistance))));
-            destTexture[id.xy] += lights[i].color * lights[i].intensity * attenuation;*/
+                float outerRadius = 300.0;
+                float innerRadius = lightRange - outerRadius;
+
+                float constantAtt = 1.0;
+                float linearAtt = 0.0;
+                float quadraticAtt = 1.0;
+                float attenuation = (1.0 / (constantAtt + linearAtt * distance / lightRange + quadraticAtt * ((distance/lightRange) * (distance / lightRange))));
+
+                if(distance > innerRadius)
+                {
+                    attenuation *= 1.0 - (distance - innerRadius) / outerRadius;
+                }
+                float4 diffuse = lights[i].color * lights[i].intensity * attenuation;
+                            
+                lightTexture[id.xy] += diffuse;
         }
     }
 }

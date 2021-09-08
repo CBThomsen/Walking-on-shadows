@@ -134,15 +134,24 @@ public class ShadowColliders : MonoBehaviour
         polyCol.SetPath(polyCol.pathCount - 1, points);
     }
 
-    private void DebugDraw(List<EdgeVertex> vertices)
+    private void DebugDraw(List<EdgeVertex> vertices, bool drawAsPoints = true)
     {
-        for (var j = 1; j < vertices.Count; j++)
+        if (drawAsPoints)
         {
-            Debug.DrawLine(SpaceConverter.TextureToWorldSpace(vertices[j - 1].position), SpaceConverter.TextureToWorldSpace(vertices[j].position), Color.magenta, Time.deltaTime);
+            for (var j = 0; j < vertices.Count; j++)
+            {
+                Debug.DrawLine(SpaceConverter.TextureToWorldSpace(vertices[j].position), SpaceConverter.TextureToWorldSpace(vertices[j].position) + new Vector2(0f, 0.5f), Color.magenta, Time.deltaTime);
+            }
         }
+        else
+        {
+            for (var j = 1; j < vertices.Count; j++)
+            {
+                Debug.DrawLine(SpaceConverter.TextureToWorldSpace(vertices[j - 1].position), SpaceConverter.TextureToWorldSpace(vertices[j].position), Color.magenta, Time.deltaTime);
+            }
 
-        Debug.DrawLine(SpaceConverter.TextureToWorldSpace(vertices[corners.Count - 1].position), SpaceConverter.TextureToWorldSpace(vertices[0].position), Color.magenta, Time.deltaTime);
-
+            Debug.DrawLine(SpaceConverter.TextureToWorldSpace(vertices[corners.Count - 1].position), SpaceConverter.TextureToWorldSpace(vertices[0].position), Color.magenta, Time.deltaTime);
+        }
     }
 
 }

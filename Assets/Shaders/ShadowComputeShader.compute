@@ -101,8 +101,8 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
         //float lightAngle = lights[i].angle;
         //float angle = fmod(atan2(direction.y, -direction.x) + lightAngle + 2 * PI, 2 * PI);
 
-        /*if(distance > lightRange)
-            continue;*/
+        if(distance > lightRange * 2.5)
+            continue;
 
         for(int j = 0; j < circles.Length; j++)
         {

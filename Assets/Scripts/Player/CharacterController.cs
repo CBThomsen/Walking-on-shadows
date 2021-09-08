@@ -12,7 +12,7 @@ public class CharacterController : InputReciever
     private float moveSpeed = 250f;
 
     [SerializeField]
-    private float maxSlopeAngle = 45f;
+    private float maxSlopeAngle = 50f;
 
     [Range(0, .3f)]
     [SerializeField] private float movementSmoothing = .05f;

@@ -1,4 +1,5 @@
 ﻿#pragma kernel ShadowComputeShader
+#pragma kernel MoveTexturePixels
 
 struct LightData {
     float angle;
@@ -22,6 +23,7 @@ struct BoxData {
 struct EdgeVertex {
     float2 position;
     int shapeIndex;
+    float angleToShapeCenter;
 };
 
 //static float2 searchDirections[] = { float2(1.0, 0.0), float2(0.0, 1.0), float2(-1.0, 0.0), float2(0.0, -1.0) };
@@ -166,7 +168,7 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
                     isEdgeVertex = true;
                 }
 
-                if(pixelPos.x == 0 || pixelPos.y == 0 || pixelPos.x == resolution.x - 1 || pixelPos.y == resolution.y - 1)
+                if(pixelPos.x == 0 || pixelPos.y == 0 || pixelPos.x == resolution.x || pixelPos.y == resolution.y)
                 {
                     isEdgeVertex = true;
                     vertex = pixelPos;
@@ -177,7 +179,12 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
                     EdgeVertex v;
                     v.position = vertex;
                     v.shapeIndex = i * max(lights.Length, boxes.Length) + k;
+                    
+                    float2 distToShapeCenter = v.position - boxCenter;
+                    v.angleToShapeCenter = atan2(distToShapeCenter.y, distToShapeCenter.x) + 2.0 * PI % (2.0 * PI) + 10.0 * v.shapeIndex;
+
                     edgeVertices.Append(v);
+                    lightTexture[id.xy] = float4(1.0, 0.0, 0.0, 1.0);
                 }
             } else {
             }
@@ -204,4 +211,12 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
                 lightTexture[id.xy] += diffuse;
         }
     }
+}
+
+
+[numthreads(32,30,1)]
+void MoveTexturePixels (uint3 id : SV_DispatchThreadID)
+{
+    shadowTexture[id.xy] = float4(1.0, 0.0, 1.0, 1.0) * 0.1;
+    lightTexture[id.xy] = float4(1.0, 0.0, 1.0, 1.0) * 0.1;
 }

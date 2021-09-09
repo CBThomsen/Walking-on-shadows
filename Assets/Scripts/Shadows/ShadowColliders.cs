@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using System.Linq;
+using MergeSort;
 
 public class ShadowColliders : MonoBehaviour
 {
@@ -10,114 +11,78 @@ public class ShadowColliders : MonoBehaviour
     public bool debugDrawCorners;
     public bool debugDrawEdgeVertices;
 
-    private int edgeVertexCount;
-    private EdgeVertex[] edgeVertices;
-
-    private List<Vector2> centroids;
-    private List<List<EdgeVertex>> shapeEdgeVertices;
-    private List<EdgeVertex> corners = new List<EdgeVertex>();
-
-    private void Start()
+    public void Create(EdgeVertex[] vertices, uint[] sortedKeys, int vertexCount)
     {
-        centroids = new List<Vector2>();
-        shapeEdgeVertices = new List<List<EdgeVertex>>();
-        corners = new List<EdgeVertex>();
-    }
-
-    public void UpdateColliders(EdgeVertex[] shadowEdgeVertices, int vertexCount)
-    {
-        edgeVertices = shadowEdgeVertices;
-        edgeVertexCount = vertexCount;
-
-        shapeEdgeVertices = SortEdgeVerticesByAngle();
+        List<List<Vector2>> shapeCorners = FindCorners(vertices, sortedKeys, vertexCount);
         ResetColliders();
 
-        for (var i = 0; i < shapeEdgeVertices.Count; i++)
+        shapeCorners.ForEach(shape =>
         {
-            List<EdgeVertex> ev = shapeEdgeVertices[i];
-            List<EdgeVertex> corners = FindCorners(ev);
+            if (shape.Count > 2)
+                AddPointsToCollider(shape.ToArray());
+        });
+    }
 
-            if (corners.Count == 0)
+    public List<List<Vector2>> FindCorners(EdgeVertex[] vertices, uint[] sortedKeys, int vertexCount)
+    {
+        List<List<Vector2>> shapeVertices = new List<List<Vector2>>();
+        List<List<Vector2>> corners = new List<List<Vector2>>();
+
+        int shapeIndex = -1;
+        for (var i = 0; i < vertexCount; i++)
+        {
+            EdgeVertex ev = vertices[sortedKeys[i]];
+
+            shapeIndex = ev.shapeIndex;
+            if (shapeIndex == -1)
+                Debug.Log("Wat! " + shapeIndex + " , " + i);
+
+            while (shapeVertices.Count < shapeIndex + 1)
+            {
+                shapeVertices.Add(new List<Vector2>());
+                corners.Add(new List<Vector2>());
+            }
+
+            shapeVertices[shapeIndex].Add(ev.position);
+        }
+
+        for (var s = 0; s < shapeVertices.Count; s++)
+        {
+            List<Vector2> positions = shapeVertices[s];
+
+            if (positions.Count <= 2)
                 continue;
 
-            //Convert to world space array
-            Vector2[] worldSpaceCorners = corners.Select(v => SpaceConverter.TextureToWorldSpace(v.position)).ToArray();
-            AddPointsToCollider(worldSpaceCorners);
+            Vector2 deltaPos;
+            float angle;
+            float deltaAngle;
 
-            if (debugDrawEdgeVertices)
-                DebugDraw(ev);
+            Vector2 lastDeltaPos = positions[0] - positions[positions.Count - 1];
+            float lastAngle = (Mathf.Atan2(lastDeltaPos.y, lastDeltaPos.x) + Mathf.PI) % (Mathf.PI);
 
-            if (debugDrawCorners)
-                DebugDraw(corners);
-        }
-    }
-
-    private List<List<EdgeVertex>> SortEdgeVerticesByAngle()
-    {
-        centroids.Clear();
-        shapeEdgeVertices.Clear();
-
-        //Locate centroids for each shape
-        for (var i = 0; i < edgeVertexCount; i++)
-        {
-            int shapeIndex = edgeVertices[i].shapeIndex;
-
-            while (shapeIndex > centroids.Count - 1)
+            for (int j = 1; j < positions.Count + 1; j++)
             {
-                centroids.Add(Vector2.zero);
-                shapeEdgeVertices.Add(new List<EdgeVertex>());
+                deltaPos = positions[j == positions.Count ? 0 : j] - positions[j - 1];
+                angle = (Mathf.Atan2(deltaPos.y, deltaPos.x) + Mathf.PI) % (Mathf.PI);
+                deltaAngle = lastAngle - angle;
+
+                if (Mathf.Abs(deltaAngle) > 0.017f) //1 degree
+                {
+                    corners[s].Add(SpaceConverter.TextureToWorldSpace(positions[j - 1]));
+                }
+
+                lastAngle = angle;
             }
-
-            Vector2 c = centroids[shapeIndex];
-            c += edgeVertices[i].position;
-
-            centroids[shapeIndex] = c;
-            shapeEdgeVertices[shapeIndex].Add(edgeVertices[i]);
-        }
-
-        for (var j = 0; j < shapeEdgeVertices.Count; j++)
-        {
-            Vector2 centroid = centroids[j] / (float)shapeEdgeVertices[j].Count;
-
-            //Order by angle to centroid
-            shapeEdgeVertices[j] = shapeEdgeVertices[j].OrderBy(v =>
-            {
-                Vector2 distToCenter = v.position - centroid;
-                float angleToCenter = Mathf.Atan2(distToCenter.y, distToCenter.x) + 2 * Mathf.PI % (2 * Mathf.PI);
-                return angleToCenter;
-            }).ToList();
-        }
-
-        return shapeEdgeVertices;
-    }
-
-    private List<EdgeVertex> FindCorners(List<EdgeVertex> ev)
-    {
-        corners.Clear();
-
-        float lastAngle = 0f;
-
-        for (var i = 1; i < ev.Count + 1; i++)
-        {
-            int curIndex = i == ev.Count ? 0 : i;
-
-            Vector2 lastPos = new Vector2(ev[i - 1].position.x, ev[i - 1].position.y);
-            Vector2 curPos = new Vector2(ev[curIndex].position.x, ev[curIndex].position.y);
-
-            Vector2 deltaPos = curPos - lastPos;
-            float angle = (Mathf.Atan2(deltaPos.y, deltaPos.x) + Mathf.PI) % (Mathf.PI);
-
-            var deltaAngle = lastAngle - angle;
-
-            if (Mathf.Abs(deltaAngle) * 180 / Mathf.PI > 1f)
-            {
-                corners.Add(ev[i - 1]);
-            }
-
-            lastAngle = angle;
         }
 
         return corners;
+    }
+
+    private float CalculateAngle(EdgeVertex ev, EdgeVertex lastEv)
+    {
+        Vector2 deltaPos = ev.position - lastEv.position;
+        float angle = (Mathf.Atan2(deltaPos.y, deltaPos.x) + Mathf.PI) % (Mathf.PI);
+        return angle;
     }
 
     public void ResetColliders()
@@ -134,16 +99,16 @@ public class ShadowColliders : MonoBehaviour
         polyCol.SetPath(polyCol.pathCount - 1, points);
     }
 
-    private void DebugDraw(List<EdgeVertex> vertices, bool drawAsPoints = true)
+    private void DebugDraw(List<Vector2> vertices, bool drawAsPoints = true)
     {
         if (drawAsPoints)
         {
             for (var j = 0; j < vertices.Count; j++)
             {
-                Debug.DrawLine(SpaceConverter.TextureToWorldSpace(vertices[j].position), SpaceConverter.TextureToWorldSpace(vertices[j].position) + new Vector2(0f, 0.5f), Color.magenta, Time.deltaTime);
+                Debug.DrawLine(SpaceConverter.TextureToWorldSpace(vertices[j]), SpaceConverter.TextureToWorldSpace(vertices[j]) + new Vector2(0f, 0.5f), Color.magenta, Time.deltaTime);
             }
         }
-        else
+        /*else
         {
             for (var j = 1; j < vertices.Count; j++)
             {
@@ -151,7 +116,7 @@ public class ShadowColliders : MonoBehaviour
             }
 
             Debug.DrawLine(SpaceConverter.TextureToWorldSpace(vertices[corners.Count - 1].position), SpaceConverter.TextureToWorldSpace(vertices[0].position), Color.magenta, Time.deltaTime);
-        }
+        }*/
     }
 
 }

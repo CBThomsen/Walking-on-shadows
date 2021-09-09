@@ -29,6 +29,7 @@ public struct EdgeVertex
 {
     public Vector2 position;
     public int shapeIndex;
+    public float angleToShapeCenter;
 }
 
 public class SceneGeometry : MonoBehaviour

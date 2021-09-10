@@ -95,19 +95,19 @@ public class ShadowSystem : MonoBehaviour
 
     private void Update()
     {
-        for (var i = 0; i < shadowEdgeVertices.Length; i++)
+        /*for (var i = 0; i < shadowEdgeVertices.Length; i++)
         {
             shadowEdgeVertices[i].shapeIndex = -1;
             shadowEdgeVertices[i].angleToShapeCenter = -99;
             shadowEdgeVertices[i].position = Vector2.zero;
         }
 
-        computeBuffers.GetEdgeVertexBuffer().SetData(shadowEdgeVertices);
+        computeBuffers.GetEdgeVertexBuffer().SetData(shadowEdgeVertices);*/
 
         SetupAndDispatchComputeShader();
 
         //Copy shadow edge vertices from shader to shadowEdgeVertices array
-        ComputeBuffer edgeVertexBuffer = computeBuffers.GetEdgeVertexBuffer();
+        /*ComputeBuffer edgeVertexBuffer = computeBuffers.GetEdgeVertexBuffer();
         int vertexCount = computeBuffers.GetAppendBufferCount(edgeVertexBuffer);
         int powTwoCount = (int)Mathf.Pow(2, Mathf.Ceil(Mathf.Log(vertexCount) / Mathf.Log(2)));
 
@@ -140,8 +140,8 @@ public class ShadowSystem : MonoBehaviour
         if (failed)
             Debug.LogWarningFormat("Sort Test Result = {0}", (failed ? "Wrong" : "Correct"));
 
-        shadowColliders.Create(shadowEdgeVertices, keys.Data, vertexCount);
-        keys.Dispose();
+        //shadowColliders.Create(shadowEdgeVertices, keys.Data, vertexCount);
+        keys.Dispose();*/
     }
 
     public void Move(int direction)

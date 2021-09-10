@@ -41,14 +41,14 @@ public class TestColliderCreation
 
         List<List<Vector2>> corners = s.FindCorners(edgeVertices, sortedKeys, 5);
 
-        Debug.Log(corners.Count);
+        /*Debug.Log(corners.Count);
         corners.ForEach(c =>
         {
             c.ForEach(p =>
             {
                 Debug.Log("Corner =" + p);
             });
-        });
+        });*/
 
         Assert.That(corners.Count == 1);
         Assert.That(corners[0].Count == 5);
@@ -64,14 +64,14 @@ public class TestColliderCreation
 
         List<List<Vector2>> corners = s.FindCorners(edgeVertices, sortedKeys, 10);
 
-        Debug.Log(corners.Count);
+        /*Debug.Log(corners.Count);
         corners.ForEach(c =>
         {
             c.ForEach(p =>
             {
                 Debug.Log("Corner =" + p);
             });
-        });
+        });*/
 
         Assert.That(corners.Count == 2);
         Assert.That(corners[0].Count == 5);
@@ -102,6 +102,38 @@ public class TestColliderCreation
         Assert.That(corners.Count == 2);
         Assert.That(corners[0].Count == 4);
         Assert.That(corners[1].Count == 4);
+    }
+
+    [UnityTest]
+    public IEnumerator TestCollidersAligningWithLightCone()
+    {
+        SceneGeometry sceneGeo = new GameObject("scceneGeometry").AddComponent<SceneGeometry>();
+        ShadowColliders s = new GameObject("shadowColliders").AddComponent<ShadowColliders>();
+
+        var lightObj = new GameObject("Light");
+        lightObj.tag = "Light";
+        lightObj.AddComponent<Light>().range = 10f;
+        lightObj.transform.SetParent(sceneGeo.transform);
+
+        var box = new GameObject("Box");
+        box.tag = "EnvBox";
+        box.AddComponent<BoxCollider2D>();
+        box.transform.SetParent(sceneGeo.transform);
+
+        //To run awakes/starts. Needed?
+        yield return new WaitForEndOfFrame();
+        yield return new WaitForSeconds(5);
+
+        List<Vector2> corners = new List<Vector2>();
+
+        corners.Add(new Vector2(0f, 0f));
+        corners.Add(new Vector2(0f, 1f));
+        corners.Add(new Vector2(5f, 3f));
+
+        corners.Add(new Vector2(0f, -1f));
+        corners.Add(new Vector2(5f, -3f));
+
+
     }
 
     private EdgeVertex[] CreateTestCornerVertices(int shapes = 1)

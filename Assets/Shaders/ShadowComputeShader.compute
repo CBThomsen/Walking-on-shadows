@@ -184,7 +184,7 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
                     v.angleToShapeCenter = atan2(distToShapeCenter.y, distToShapeCenter.x) + 2.0 * PI % (2.0 * PI) + 10.0 * v.shapeIndex;
 
                     edgeVertices.Append(v);
-                    lightTexture[id.xy] = float4(1.0, 0.0, 0.0, 1.0);
+                    //lightTexture[id.xy] = float4(1.0, 0.0, 0.0, 1.0);
                 }
             } else {
             }

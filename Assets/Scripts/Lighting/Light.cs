@@ -5,15 +5,15 @@ using UnityEngine;
 public class Light : MonoBehaviour
 {
     [SerializeField]
-    private Color color;
+    public Color color;
 
     [SerializeField]
-    private float range;
+    public float range;
 
     [SerializeField]
-    private float intensity;
+    public float intensity;
 
-    private bool isOn = true;
+    public bool isOn = true;
 
     private LightData data = new LightData();
 

@@ -1,5 +1,4 @@
 ﻿#pragma kernel ShadowComputeShader
-#pragma kernel MoveTexturePixels
 
 struct LightData {
     float angle;
@@ -211,12 +210,4 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
                 lightTexture[id.xy] += diffuse;
         }
     }
-}
-
-
-[numthreads(32,30,1)]
-void MoveTexturePixels (uint3 id : SV_DispatchThreadID)
-{
-    shadowTexture[id.xy] = float4(1.0, 0.0, 1.0, 1.0) * 0.1;
-    lightTexture[id.xy] = float4(1.0, 0.0, 1.0, 1.0) * 0.1;
 }

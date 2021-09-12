@@ -66,6 +66,9 @@ Shader "Sprites/CustomLightingNoShadow"
                 float2 pixelPos = float2(vi.vertex.x, vi.vertex.y);
                 float4 diffuse = float4(0.0, 0.0, 0.0, 0.0);
 
+                if(lights.Length == 0)
+                    return col;
+
                 for(int i = 0; i < lights.Length; i++)
                 {   
                     if(lights[i].isOn == 0)

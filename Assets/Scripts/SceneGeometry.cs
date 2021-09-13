@@ -114,7 +114,7 @@ public class SceneGeometry : MonoBehaviour
 
             var b = new BoxData();
             b.center = SpaceConverter.WorldToTextureSpace(sceneBoxes[j].transform.position);
-            b.extents = sceneBoxes[j].size * 0.5f * SpaceConverter.WorldToTextureScaleFactor();
+            b.extents = sceneBoxes[j].size * sceneBoxes[j].transform.localScale * 0.5f * SpaceConverter.WorldToTextureScaleFactor();
 
             boxData[j] = b;
         }

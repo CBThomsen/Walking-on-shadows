@@ -1061,7 +1061,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   jumpForce: 300
   moveSpeed: 250
-  maxSlopeAngle: 25
+  maxSlopeAngle: 45
   movementSmoothing: 0.05
   airControl: 1
   groundLayerMask:
@@ -1077,7 +1077,7 @@ Transform:
   m_GameObject: {fileID: 1785896397}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 5.48, y: 0.52999973, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 1}
   m_Children:
   - {fileID: 1930795523}
   m_Father: {fileID: 0}

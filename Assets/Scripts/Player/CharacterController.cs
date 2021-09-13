@@ -12,7 +12,7 @@ public class CharacterController : InputReciever
     private float moveSpeed = 250f;
 
     [SerializeField]
-    private float maxSlopeAngle = 50f;
+    private float maxSlopeAngle = 65f;
 
     [Range(0, .3f)]
     [SerializeField] private float movementSmoothing = .05f;
@@ -23,7 +23,7 @@ public class CharacterController : InputReciever
     [SerializeField] private LayerMask groundLayerMask;
     [SerializeField] private Transform groundTransform;
 
-    private const float groundedRadius = 0.3f;
+    private const float groundedRadius = 0.6f;
     private bool grounded;
     private float slopeAngle;
     private Rigidbody2D body;
@@ -74,6 +74,9 @@ public class CharacterController : InputReciever
 
         if (grounded)
             slopeAngle = newSlopeAngle;
+        else
+        {
+        }
     }
 
     public override void OnHorizontalKeyDown(float horizontal)
@@ -91,7 +94,9 @@ public class CharacterController : InputReciever
         if ((grounded || airControl) && slopeAngle < maxSlopeAngle)
         {
             Vector3 targetVelocity = new Vector2(move, body.velocity.y);
+            targetVelocity.y = Mathf.Min(10f, targetVelocity.y);
             body.velocity = Vector3.SmoothDamp(body.velocity, targetVelocity, ref velocity, movementSmoothing);
+
 
             if (move > 0 && !facingRight)
             {

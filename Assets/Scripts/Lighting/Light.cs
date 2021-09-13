@@ -33,4 +33,12 @@ public class Light : MonoBehaviour
         isOn = !isOn;
     }
 
+    public void OnDrawGizmos()
+    {
+        Color gizmoColor = color;
+        gizmoColor.a = 0.5f;
+        Gizmos.color = gizmoColor;
+        Gizmos.DrawWireSphere(transform.position, range);
+    }
+
 }

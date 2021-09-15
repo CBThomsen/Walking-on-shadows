@@ -16,8 +16,6 @@ public class LevelSelect : MonoBehaviour
 
     void Start()
     {
-        LevelController.instance.UnloadCurrentLevel();
-
         string[] files = Directory.GetFiles(levelResourcePath);
 
         for (var i = 0; i < files.Length; i++)
@@ -43,6 +41,7 @@ public class LevelSelect : MonoBehaviour
 
     private void OnClickedLevelButton(string levelName)
     {
-        StartCoroutine(LevelController.instance.LoadLevel(levelName));
+        CoreInstaller.levelName = levelName;
+        SceneManager.LoadSceneAsync("Core", LoadSceneMode.Single);
     }
 }

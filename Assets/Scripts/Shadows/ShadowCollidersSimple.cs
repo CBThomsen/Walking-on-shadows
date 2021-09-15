@@ -144,7 +144,7 @@ public class ShadowCollidersSimple : MonoBehaviour
             for (var j = 0; j < boxes.Length; j++)
             {
                 UpdateBoxShadowCollider(shapeColliders[shapeIndex], lights[i], boxes[j]);
-                shapeColliders[shapeIndex].SetEnabled(lights[i].isOn);
+                shapeColliders[shapeIndex].SetEnabled(lights[i].gameObject.activeInHierarchy);
                 shapeIndex += 1;
             }
         }

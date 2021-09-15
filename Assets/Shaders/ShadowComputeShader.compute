@@ -33,7 +33,7 @@ RWStructuredBuffer<BoxData> boxes;
 
 RWTexture2D<float4> shadowTexture;
 RWTexture2D<float4> lightTexture;
-AppendStructuredBuffer<EdgeVertex> edgeVertices;
+//AppendStructuredBuffer<EdgeVertex> edgeVertices;
 
 float4 shadowColor;
 int2 resolution;
@@ -123,70 +123,6 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
 
             int intersections = TestRayBox(lightPos, pixelPos, boxMin, boxMax);
             totalIntersections += intersections;
-
-            if(intersections > 0)
-            {
-                //Find more accurate value rather than rounded off value
-                float2 dir = float2(0.0, 0.0);
-                
-                if(TestRayBox(lightPos, float2(pixelPos.x + 1.0, pixelPos.y), boxMin, boxMax) == 0)
-                {
-                    dir.x = 1.0;
-                } 
-                else if(TestRayBox(lightPos, float2(pixelPos.x - 1.0, pixelPos.y), boxMin, boxMax) == 0)
-                {
-                    dir.x = -1.0;
-                }
-
-                if(TestRayBox(lightPos, float2(pixelPos.x, pixelPos.y + 1.0), boxMin, boxMax) == 0)
-                {
-                    dir.y = 1.0;
-                }
-                else if(TestRayBox(lightPos, float2(pixelPos.x, pixelPos.y - 1.0), boxMin, boxMax) == 0)
-                {                
-                    dir.y = -1.0;
-                }
-
-                bool isEdgeVertex = false;
-                float2 vertex;
-
-                if(abs(dir.x) > 0.0 || abs(dir.y) > 0.0)
-                {
-                    bool intersecting = true; 
-                    float maxSteps = 100;
-                    float stepSize = 1 / maxSteps;
-                    float steps = 0.0;
-
-                    while(intersecting == true && steps < maxSteps)
-                    {
-                        steps += 1.0;
-                        intersecting = TestRayBox(lightPos, pixelPos + dir * stepSize * steps, boxMin, boxMax) > 0;
-                    }
-
-                    vertex = pixelPos + dir * stepSize * steps;
-                    isEdgeVertex = true;
-                }
-
-                if(pixelPos.x == 0 || pixelPos.y == 0 || pixelPos.x == resolution.x || pixelPos.y == resolution.y)
-                {
-                    isEdgeVertex = true;
-                    vertex = pixelPos;
-                }
-
-                if(isEdgeVertex)
-                {
-                    EdgeVertex v;
-                    v.position = vertex;
-                    v.shapeIndex = i * max(lights.Length, boxes.Length) + k;
-                    
-                    float2 distToShapeCenter = v.position - boxCenter;
-                    v.angleToShapeCenter = atan2(distToShapeCenter.y, distToShapeCenter.x) + 2.0 * PI % (2.0 * PI) + 10.0 * v.shapeIndex;
-
-                    edgeVertices.Append(v);
-                    //lightTexture[id.xy] = float4(1.0, 0.0, 0.0, 1.0);
-                }
-            } else {
-            }
         }
 
         if(totalIntersections > 0)

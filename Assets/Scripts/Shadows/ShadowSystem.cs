@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using MergeSort;
+using Zenject;
 
 public class ShadowSystem : MonoBehaviour
 {
@@ -12,11 +13,15 @@ public class ShadowSystem : MonoBehaviour
     public ComputeBuffers computeBuffers;
     public Color shadowColor;
 
-    private EdgeVertex[] shadowEdgeVertices = new EdgeVertex[ComputeBuffers.EDGEVERTEX_BUFFER_SIZE];
-
     public static Vector2Int textureResolution = new Vector2Int(1920, 1080);
 
     private int shadowComputeShaderKI;
+
+    [Inject]
+    public void Construct(ComputeBuffers computeBuffers)
+    {
+        this.computeBuffers = computeBuffers;
+    }
 
     void Start()
     {
@@ -34,11 +39,9 @@ public class ShadowSystem : MonoBehaviour
     {
         ComputeBuffer lightBuffer = computeBuffers.GetLightBuffer();
         ComputeBuffer boxBuffer = computeBuffers.GetBoxBuffer();
-        ComputeBuffer edgeVertexBuffer = computeBuffers.GetEdgeVertexBuffer();
 
         computeShader.SetBuffer(shadowComputeShaderKI, "lights", lightBuffer);
         computeShader.SetBuffer(shadowComputeShaderKI, "boxes", boxBuffer);
-        computeShader.SetBuffer(shadowComputeShaderKI, "edgeVertices", edgeVertexBuffer);
         computeShader.SetVector("shadowColor", shadowColor);
 
         computeShader.Dispatch(shadowComputeShaderKI, textureResolution.x / 32, textureResolution.y / 30, 1);

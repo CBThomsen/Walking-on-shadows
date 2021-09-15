@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using MergeSort;
 using UnityEditor;
 using System.Linq;
 
@@ -11,7 +10,7 @@ using System.Linq;
 public class TestColliderCreation
 {
 
-    private SpaceConverter spaceConverter;
+    /*private SpaceConverter spaceConverter;
     private Camera camera;
 
     [SetUp]
@@ -48,97 +47,89 @@ public class TestColliderCreation
             {
                 Debug.Log("Corner =" + p);
             });
-        });*/
-
-        Assert.That(corners.Count == 1);
-        Assert.That(corners[0].Count == 5);
-    }
-
-    [Test]
-    public void TestCornersMultipleShapes()
-    {
-        ShadowColliders s = new GameObject("shadowColliders").AddComponent<ShadowColliders>();
-
-        EdgeVertex[] edgeVertices = CreateTestCornerVertices(2);
-        uint[] sortedKeys = new uint[10] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-
-        List<List<Vector2>> corners = s.FindCorners(edgeVertices, sortedKeys, 10);
-
-        /*Debug.Log(corners.Count);
-        corners.ForEach(c =>
-        {
-            c.ForEach(p =>
-            {
-                Debug.Log("Corner =" + p);
-            });
-        });*/
-
-        Assert.That(corners.Count == 2);
-        Assert.That(corners[0].Count == 5);
-        Assert.That(corners[1].Count == 5);
-    }
-
-
-    [Test]
-    public void TestNonCornersRemoved()
-    {
-        ShadowColliders s = new GameObject("shadowColliders").AddComponent<ShadowColliders>();
-
-        EdgeVertex[] edgeVertices = CreateTestShapeWithCollinearPoints(2);
-        uint[] sortedKeys = new uint[24];
-        sortedKeys = sortedKeys.Select((s, i) => (uint)i).ToArray();
-
-        List<List<Vector2>> corners = s.FindCorners(edgeVertices, sortedKeys, edgeVertices.Length);
-
-        Debug.Log(corners.Count);
-        corners.ForEach(c =>
-        {
-            c.ForEach(p =>
-            {
-                Debug.Log("Corner =" + SpaceConverter.WorldToTextureSpace(p));
-            });
         });
 
-        Assert.That(corners.Count == 2);
-        Assert.That(corners[0].Count == 4);
-        Assert.That(corners[1].Count == 4);
+    Assert.That(corners.Count == 1);
+        Assert.That(corners[0].Count == 5);
     }
 
-    [UnityTest]
-    public IEnumerator TestCollidersAligningWithLightCone()
+[Test]
+public void TestCornersMultipleShapes()
+{
+    ShadowColliders s = new GameObject("shadowColliders").AddComponent<ShadowColliders>();
+
+    EdgeVertex[] edgeVertices = CreateTestCornerVertices(2);
+    uint[] sortedKeys = new uint[10] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+    List<List<Vector2>> corners = s.FindCorners(edgeVertices, sortedKeys, 10);
+
+
+    Assert.That(corners.Count == 2);
+    Assert.That(corners[0].Count == 5);
+    Assert.That(corners[1].Count == 5);
+}
+
+
+[Test]
+public void TestNonCornersRemoved()
+{
+    ShadowColliders s = new GameObject("shadowColliders").AddComponent<ShadowColliders>();
+
+    EdgeVertex[] edgeVertices = CreateTestShapeWithCollinearPoints(2);
+    uint[] sortedKeys = new uint[24];
+    sortedKeys = sortedKeys.Select((s, i) => (uint)i).ToArray();
+
+    List<List<Vector2>> corners = s.FindCorners(edgeVertices, sortedKeys, edgeVertices.Length);
+
+    Debug.Log(corners.Count);
+    corners.ForEach(c =>
     {
-        SceneGeometry sceneGeo = new GameObject("scceneGeometry").AddComponent<SceneGeometry>();
-        ShadowColliders s = new GameObject("shadowColliders").AddComponent<ShadowColliders>();
+        c.ForEach(p =>
+        {
+            Debug.Log("Corner =" + SpaceConverter.WorldToTextureSpace(p));
+        });
+    });
 
-        var lightObj = new GameObject("Light");
-        lightObj.tag = "Light";
-        lightObj.AddComponent<Light>().range = 10f;
-        lightObj.transform.SetParent(sceneGeo.transform);
+    Assert.That(corners.Count == 2);
+    Assert.That(corners[0].Count == 4);
+    Assert.That(corners[1].Count == 4);
+}
 
-        var box = new GameObject("Box");
-        box.tag = "EnvBox";
-        box.AddComponent<BoxCollider2D>();
-        box.transform.SetParent(sceneGeo.transform);
+[UnityTest]
+public IEnumerator TestCollidersAligningWithLightCone()
+{
+    SceneGeometry sceneGeo = new GameObject("scceneGeometry").AddComponent<SceneGeometry>();
+    ShadowColliders s = new GameObject("shadowColliders").AddComponent<ShadowColliders>();
 
-        //To run awakes/starts. Needed?
-        yield return new WaitForEndOfFrame();
-        yield return new WaitForSeconds(5);
+    var lightObj = new GameObject("Light");
+    lightObj.tag = "Light";
+    lightObj.AddComponent<Light>().range = 10f;
+    lightObj.transform.SetParent(sceneGeo.transform);
 
-        List<Vector2> corners = new List<Vector2>();
+    var box = new GameObject("Box");
+    box.tag = "EnvBox";
+    box.AddComponent<BoxCollider2D>();
+    box.transform.SetParent(sceneGeo.transform);
 
-        corners.Add(new Vector2(0f, 0f));
-        corners.Add(new Vector2(0f, 1f));
-        corners.Add(new Vector2(5f, 3f));
+    //To run awakes/starts. Needed?
+    yield return new WaitForEndOfFrame();
+    yield return new WaitForSeconds(5);
 
-        corners.Add(new Vector2(0f, -1f));
-        corners.Add(new Vector2(5f, -3f));
+    List<Vector2> corners = new List<Vector2>();
+
+    corners.Add(new Vector2(0f, 0f));
+    corners.Add(new Vector2(0f, 1f));
+    corners.Add(new Vector2(5f, 3f));
+
+    corners.Add(new Vector2(0f, -1f));
+    corners.Add(new Vector2(5f, -3f));
 
 
-    }
+}
 
-    private EdgeVertex[] CreateTestCornerVertices(int shapes = 1)
-    {
-        Vector2[] positions = new Vector2[5] {
+private EdgeVertex[] CreateTestCornerVertices(int shapes = 1)
+{
+    Vector2[] positions = new Vector2[5] {
             new Vector2(0f, 1f),
             new Vector2(-0.9f, 0.3f),
             new Vector2(-0.6f, -0.8f),
@@ -146,24 +137,24 @@ public class TestColliderCreation
             new Vector2(0.9f, 0.3f),
         };
 
-        EdgeVertex[] edgeVertices = new EdgeVertex[5 * shapes];
+    EdgeVertex[] edgeVertices = new EdgeVertex[5 * shapes];
 
-        for (var i = 0; i < shapes * 5; i++)
-        {
-            int shapeIndex = Mathf.FloorToInt(i / 5);
-            EdgeVertex ev = new EdgeVertex();
-            ev.position = positions[i % 5] + new Vector2(5f * shapeIndex, 0f);
-            ev.shapeIndex = shapeIndex;
-            edgeVertices[i] = ev;
-        }
-
-        return edgeVertices;
+    for (var i = 0; i < shapes * 5; i++)
+    {
+        int shapeIndex = Mathf.FloorToInt(i / 5);
+        EdgeVertex ev = new EdgeVertex();
+        ev.position = positions[i % 5] + new Vector2(5f * shapeIndex, 0f);
+        ev.shapeIndex = shapeIndex;
+        edgeVertices[i] = ev;
     }
 
+    return edgeVertices;
+}
 
-    private EdgeVertex[] CreateTestShapeWithCollinearPoints(int shapes = 1)
-    {
-        Vector2[] positions = new Vector2[12] {
+
+private EdgeVertex[] CreateTestShapeWithCollinearPoints(int shapes = 1)
+{
+    Vector2[] positions = new Vector2[12] {
             new Vector2(1f, 1f),
 
             new Vector2(0.5f, 1f),
@@ -185,20 +176,21 @@ public class TestColliderCreation
             new Vector2(1f, 0.5f),
         };
 
-        int pointsPerShape = positions.Length;
+    int pointsPerShape = positions.Length;
 
-        EdgeVertex[] edgeVertices = new EdgeVertex[pointsPerShape * shapes];
+    EdgeVertex[] edgeVertices = new EdgeVertex[pointsPerShape * shapes];
 
-        for (var i = 0; i < shapes * pointsPerShape; i++)
-        {
-            int shapeIndex = Mathf.FloorToInt(i / pointsPerShape);
-            EdgeVertex ev = new EdgeVertex();
-            ev.position = (positions[i % pointsPerShape] + new Vector2(5f * shapeIndex, 0f));
-            ev.shapeIndex = shapeIndex;
-            edgeVertices[i] = ev;
-        }
-
-        return edgeVertices;
+    for (var i = 0; i < shapes * pointsPerShape; i++)
+    {
+        int shapeIndex = Mathf.FloorToInt(i / pointsPerShape);
+        EdgeVertex ev = new EdgeVertex();
+        ev.position = (positions[i % pointsPerShape] + new Vector2(5f * shapeIndex, 0f));
+        ev.shapeIndex = shapeIndex;
+        edgeVertices[i] = ev;
     }
+
+    return edgeVertices;
+}
+*/
 
 }

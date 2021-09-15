@@ -1,37 +1,30 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Zenject;
 
-public class ComputeBuffers : MonoBehaviour
+public class ComputeBuffers : ITickable
 {
-    public const int EDGEVERTEX_BUFFER_SIZE = 1 << 16;
+    private SceneGeometry sceneGeometry;
+    private ComputeBuffer lightBuffer = null;
+    private ComputeBuffer boxBuffer = null;
 
-    private ComputeBuffer lightBuffer;
-    private ComputeBuffer boxBuffer;
-    private ComputeBuffer edgeVertexBuffer;
+    private Light[] lights;
+    private Box[] boxes;
 
-    private void Start()
+    private LightData[] lightDataArray;
+    private BoxData[] boxDataArray;
+
+    [Inject]
+    public void Construct(SceneGeometry sceneGeometry)
     {
-        CreateComputeBuffers();
+        this.sceneGeometry = sceneGeometry;
     }
 
-    private void OnDestroy()
+    private void Dispose()
     {
         lightBuffer.Release();
         boxBuffer.Release();
-        edgeVertexBuffer.Release();
-    }
-
-    private void CreateComputeBuffers()
-    {
-        LightData[] lightDataArray = SceneGeometry.instance.GetLightDataArray();
-        lightBuffer = new ComputeBuffer(lightDataArray.Length, 9 * sizeof(float) + sizeof(int));
-
-        BoxData[] boxDataArray = SceneGeometry.instance.GetBoxDatas();
-        boxBuffer = new ComputeBuffer(boxDataArray.Length, boxDataArray.Length * 4 * sizeof(float));
-
-        edgeVertexBuffer = new ComputeBuffer(EDGEVERTEX_BUFFER_SIZE, 3 * sizeof(float) + sizeof(int), ComputeBufferType.Append);
-        edgeVertexBuffer.SetCounterValue(0);
     }
 
     public ComputeBuffer GetLightBuffer()
@@ -44,27 +37,54 @@ public class ComputeBuffers : MonoBehaviour
         return boxBuffer;
     }
 
-    public ComputeBuffer GetEdgeVertexBuffer()
+    private void CreateOrResizeComputeBuffers()
     {
-        return edgeVertexBuffer;
+        lights = sceneGeometry.GetLights();
+
+        if (lightDataArray == null || lights.Length != lightDataArray.Length)
+        {
+            if (lightBuffer != null)
+                lightBuffer.Release();
+
+            lightDataArray = new LightData[lights.Length];
+            lightBuffer = new ComputeBuffer(lightDataArray.Length, 9 * sizeof(float) + sizeof(int));
+        }
+
+        boxes = sceneGeometry.GetBoxes();
+
+        if (boxDataArray == null || boxes.Length != boxDataArray.Length)
+        {
+            if (boxBuffer != null)
+                boxBuffer.Release();
+
+            boxDataArray = new BoxData[boxes.Length];
+            boxBuffer = new ComputeBuffer(boxDataArray.Length, boxDataArray.Length * 4 * sizeof(float));
+        }
     }
 
-    private void Update()
+    private void UpdateBuffers()
     {
-        lightBuffer.SetData(SceneGeometry.instance.GetLightDataArray());
-        boxBuffer.SetData(SceneGeometry.instance.GetBoxDatas());
-        edgeVertexBuffer.SetCounterValue(0);
+        for (var i = 0; i < lights.Length; i++)
+        {
+            LightData data = lights[i].GetLightData();
+            lightDataArray[i] = data;
+        }
+
+        for (var i = 0; i < boxes.Length; i++)
+        {
+            BoxData data = boxes[i].GetBoxData();
+            boxDataArray[i] = data;
+        }
     }
 
-    public int GetAppendBufferCount(ComputeBuffer appendBuffer)
+    public void Tick()
     {
-        ComputeBuffer countBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
-        ComputeBuffer.CopyCount(appendBuffer, countBuffer, 0);
+        CreateOrResizeComputeBuffers();
 
-        int[] counter = new int[1] { 0 };
-        countBuffer.GetData(counter);
-        countBuffer.Dispose();
-        return counter[0];
+        UpdateBuffers();
+
+        lightBuffer.SetData(lightDataArray);
+        boxBuffer.SetData(boxDataArray);
     }
 
 }

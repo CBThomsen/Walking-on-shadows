@@ -3,14 +3,12 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using MergeSort;
 using UnityEditor;
 
 
 public class TestShadowPhysics
 {
-    private ShadowColliders shadowColliders;
-    private ShapeCollider collider;
+    /*private ShapeCollider collider;
     private Light light;
     private Sprite circleSprite;
 
@@ -18,7 +16,6 @@ public class TestShadowPhysics
     public void Setup()
     {
         var sceneGeo = new GameObject("SceneGeometry");
-        sceneGeo.AddComponent<SceneGeometry>();
 
         var camera = new GameObject("Camera");
         camera.tag = "MainCamera";
@@ -30,8 +27,6 @@ public class TestShadowPhysics
         lightObj.transform.SetParent(sceneGeo.transform);
 
         var shadowColObj = new GameObject("ShadowColliders");
-        shadowColliders = shadowColObj.AddComponent<ShadowColliders>();
-
         collider = new ShapeCollider(shadowColObj);
 
         circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Circle.png");
@@ -97,7 +92,7 @@ public class TestShadowPhysics
         collider.SetColliderPoints(1, edgeBv1, edgeBv2);
         collider.UpdateColliders();
     }
-
+*/
 
 
 }

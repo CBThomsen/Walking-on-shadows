@@ -4,6 +4,7 @@ using System.IO;
 using UnityEngine;
 using System.Linq;
 using MergeSort;
+using Zenject;
 
 
 public class Vector2Pair
@@ -59,7 +60,6 @@ public class ShapeCollider
         {
             wasDisabled = wasDisabled ? wasDisabled : !colliders[i].gameObject.activeInHierarchy;
             colliders[i].gameObject.SetActive(enabled);
-
         }
 
         if (wasDisabled)
@@ -101,17 +101,24 @@ public class ShapeCollider
 
 public class ShadowCollidersSimple : MonoBehaviour
 {
-    private LightData[] lights;
-    private BoxData[] boxes;
-
     private List<ShapeCollider> shapeColliders;
+    private SceneGeometry sceneGeometry;
+
+    private Light[] lights;
+    private Box[] boxes;
+
+    [Inject]
+    public void Construct(SceneGeometry sceneGeometry)
+    {
+        this.sceneGeometry = sceneGeometry;
+    }
 
     private void Start()
     {
         shapeColliders = new List<ShapeCollider>();
 
-        lights = SceneGeometry.instance.GetLightDataArray();
-        boxes = SceneGeometry.instance.GetBoxDatas();
+        lights = sceneGeometry.GetLights();
+        boxes = sceneGeometry.GetBoxes();
 
         int shapeIndex = 0;
 
@@ -128,8 +135,8 @@ public class ShadowCollidersSimple : MonoBehaviour
 
     private void Update()
     {
-        lights = SceneGeometry.instance.GetLightDataArray();
-        boxes = SceneGeometry.instance.GetBoxDatas();
+        lights = sceneGeometry.GetLights();
+        boxes = sceneGeometry.GetBoxes();
 
         int shapeIndex = 0;
         for (var i = 0; i < lights.Length; i++)
@@ -137,26 +144,23 @@ public class ShadowCollidersSimple : MonoBehaviour
             for (var j = 0; j < boxes.Length; j++)
             {
                 UpdateBoxShadowCollider(shapeColliders[shapeIndex], lights[i], boxes[j]);
-                shapeColliders[shapeIndex].SetEnabled(lights[i].isOn == 1 ? true : false);
+                shapeColliders[shapeIndex].SetEnabled(lights[i].isOn);
                 shapeIndex += 1;
             }
         }
     }
 
-    public void UpdateBoxShadowCollider(ShapeCollider shapeCollider, LightData light, BoxData box)
+    public void UpdateBoxShadowCollider(ShapeCollider shapeCollider, Light light, Box box)
     {
-        List<Vector2> boxCorners = new List<Vector2>();
-        boxCorners.Add((box.center + new Vector2(box.extents.x, box.extents.y)));
-        boxCorners.Add((box.center + new Vector2(-box.extents.x, box.extents.y)));
-        boxCorners.Add((box.center + new Vector2(-box.extents.x, -box.extents.y)));
-        boxCorners.Add((box.center + new Vector2(box.extents.x, -box.extents.y)));
+        Vector2[] boxExtents = box.GetExtents();
 
-        for (var i = 0; i < boxCorners.Count; i++)
+        for (var i = 0; i < boxExtents.Length; i++)
         {
-            Vector2 distToCorner = boxCorners[i] - light.position;
+            Vector2 boxCorner = ((Vector2)box.transform.position + boxExtents[i]);
+            Vector2 distToCorner = boxCorner - (Vector2)light.transform.position;
             float length = Mathf.Max(light.range - distToCorner.magnitude, 0f);
 
-            shapeCollider.SetColliderPoints(i, SpaceConverter.TextureToWorldSpace(boxCorners[i]), SpaceConverter.TextureToWorldSpace(boxCorners[i] + length * distToCorner.normalized));
+            shapeCollider.SetColliderPoints(i, boxCorner, boxCorner + length * distToCorner.normalized);
         }
 
         shapeCollider.UpdateColliders();

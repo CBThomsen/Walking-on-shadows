@@ -9,28 +9,9 @@ using UnityEditor;
 
 public class TestGPUSort
 {
-    [Test]
+    /*[Test]
     public void TestSortFloats()
     {
-        var count = 4;
-        Debug.LogFormat("Count={0}", count);
-
-        ComputeShader compute = AssetDatabase.LoadAssetAtPath<ComputeShader>("Assets/Shaders/BitonicMergeSort.compute");
-
-        BitonicMergeSort sort = new BitonicMergeSort(compute);
-        DisposableBuffer<uint> keys = new DisposableBuffer<uint>(count);
-        DisposableBuffer<float> values = new DisposableBuffer<float>(count);
-
-        var data = new float[count];
-        for (var i = 0; i < count; i++)
-            data[i] = i * Random.Range(0f, 5f);
-
-        /*for (var i = 0; i < count; i++)
-        {
-            var j = Random.Range(0, count);
-            var k = Random.Range(0, count);
-            var tmp = data[j]; data[j] = data[k]; data[k] = tmp;
-        }*/
 
         System.Array.Copy(data, values.Data, count);
         values.Upload();
@@ -117,5 +98,5 @@ public class TestGPUSort
         sort.Dispose();
         keys.Dispose();
         valueBuffer.Release();
-    }
+    }*/
 }

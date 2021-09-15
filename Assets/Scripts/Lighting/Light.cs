@@ -20,8 +20,10 @@ public class Light : MonoBehaviour
     public LightData GetLightData()
     {
         data.angle = transform.rotation.eulerAngles.z * Mathf.PI / 180f;
+        data.position = SpaceConverter.WorldToTextureSpace(transform.position);
+
+        data.range = range * SpaceConverter.WorldToTextureScaleFactor().x;
         data.color = (Vector4)color;
-        data.range = range;
         data.intensity = intensity;
         data.isOn = (isOn && gameObject.activeInHierarchy) ? 1 : 0;
 

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Zenject;
 
 public class LightSystem : MonoBehaviour
 {
@@ -10,6 +11,12 @@ public class LightSystem : MonoBehaviour
     public ComputeBuffers computeBuffers;
     public ShadowRenderer shadowRenderer;
     public Color ambientColor;
+
+    [Inject]
+    public void Construct(ComputeBuffers computeBuffers)
+    {
+        this.computeBuffers = computeBuffers;
+    }
 
     void Start()
     {
@@ -25,7 +32,6 @@ public class LightSystem : MonoBehaviour
     void Update()
     {
         spriteLitMaterial.SetVector("ambient", ambientColor);
-
         spriteLitMaterialNoShadow.SetVector("ambient", ambientColor);
         spriteLitMaterialNoShadow.SetBuffer("lights", computeBuffers.GetLightBuffer());
     }

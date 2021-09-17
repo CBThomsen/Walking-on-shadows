@@ -41,15 +41,6 @@ public class CharacterController : InputReciever
         grounded = false;
         slopeAngle = 0f;
 
-        /*Collider2D[] colliders = Physics2D.OverlapCircleAll(groundTransform.position, groundedRadius, groundLayerMask);
-        for (int i = 0; i < colliders.Length; i++)
-        {
-            if (colliders[i].gameObject != gameObject)
-            {
-                grounded = true;
-            }
-        }*/
-
         float newSlopeAngle = float.MaxValue;
 
         Vector3 leftLeg = transform.position + Vector3.left * 0.2f;
@@ -74,9 +65,6 @@ public class CharacterController : InputReciever
 
         if (grounded)
             slopeAngle = newSlopeAngle;
-        else
-        {
-        }
     }
 
     public override void OnHorizontalKeyDown(float horizontal)

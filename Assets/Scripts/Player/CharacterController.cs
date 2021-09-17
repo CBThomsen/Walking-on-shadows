@@ -54,11 +54,11 @@ public class CharacterController : InputReciever
 
         Vector3 leftLeg = transform.position + Vector3.left * 0.2f;
         RaycastHit2D[] hitsLeftLeg = Physics2D.RaycastAll(leftLeg, -transform.up, groundedRadius, groundLayerMask);
-        Debug.DrawLine(leftLeg, leftLeg + -transform.up * groundedRadius);
+        //Debug.DrawLine(leftLeg, leftLeg + -transform.up * groundedRadius);
 
         Vector3 rightLeg = transform.position + Vector3.right * 0.2f;
         RaycastHit2D[] hitsRightLeg = Physics2D.RaycastAll(rightLeg, -transform.up, groundedRadius, groundLayerMask);
-        Debug.DrawLine(rightLeg, rightLeg + -transform.up * groundedRadius);
+        //Debug.DrawLine(rightLeg, rightLeg + -transform.up * groundedRadius);
 
         IEnumerable<RaycastHit2D> allHits = hitsLeftLeg.Concat(hitsRightLeg);
 
@@ -94,9 +94,11 @@ public class CharacterController : InputReciever
         if ((grounded || airControl) && slopeAngle < maxSlopeAngle)
         {
             Vector3 targetVelocity = new Vector2(move, body.velocity.y);
-            targetVelocity.y = Mathf.Min(10f, targetVelocity.y);
-            body.velocity = Vector3.SmoothDamp(body.velocity, targetVelocity, ref velocity, movementSmoothing);
 
+            if (targetVelocity.y >= 10f)
+                targetVelocity.y *= Mathf.Clamp01((0.8f - (targetVelocity.y - 10f) * 0.01f));
+
+            body.velocity = Vector3.SmoothDamp(body.velocity, targetVelocity, ref velocity, movementSmoothing);
 
             if (move > 0 && !facingRight)
             {
@@ -115,7 +117,6 @@ public class CharacterController : InputReciever
         }
     }
 
-
     private void Flip()
     {
         facingRight = !facingRight;
@@ -124,4 +125,21 @@ public class CharacterController : InputReciever
         currentScale.x *= -1;
         transform.localScale = currentScale;
     }
+
+    private void OnCollisionExit2D(Collision2D other)
+    {
+        float maxSpeed = 50f;
+        Vector2 maxVelocity = body.velocity.normalized * maxSpeed;
+        Vector2 newVelocity = body.velocity;
+
+        newVelocity.y = Mathf.Min(maxSpeed, body.velocity.y);
+
+        if (Mathf.Abs(body.velocity.x) > Mathf.Abs(maxVelocity.x))
+        {
+            newVelocity.x = maxVelocity.x;
+        }
+
+        body.velocity = newVelocity;
+    }
+
 }

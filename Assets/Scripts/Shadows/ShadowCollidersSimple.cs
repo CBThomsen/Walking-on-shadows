@@ -83,6 +83,8 @@ public class ShapeCollider
             Vector2 newPosition = vecs.v1 + vecs.delta * 0.5f;
             Quaternion newRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(vecs.delta.y, vecs.delta.x) * 180f / Mathf.PI);
 
+            colliders[i].size = new Vector2(vecs.delta.magnitude, colliders[i].size.y);
+
             if (instant)
             {
                 colliderBodies[i].position = newPosition;
@@ -93,8 +95,6 @@ public class ShapeCollider
                 colliderBodies[i].MovePosition(newPosition);
                 colliderBodies[i].MoveRotation(newRotation);
             }
-
-            colliders[i].size = new Vector2(vecs.delta.magnitude, colliders[i].size.y);
         }
     }
 }
@@ -133,7 +133,7 @@ public class ShadowCollidersSimple : MonoBehaviour
         }
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         lights = sceneGeometry.GetLights();
         boxes = sceneGeometry.GetBoxes();
@@ -160,10 +160,13 @@ public class ShadowCollidersSimple : MonoBehaviour
             Vector2 distToCorner = boxCorner - (Vector2)light.transform.position;
             float length = Mathf.Max(light.range - distToCorner.magnitude, 0f);
 
-            Vector2 dirToCenter = ((Vector2)box.transform.position - boxCorner).normalized;
             float height = 0.1f;
+            Vector2 signedExtents = new Vector2(Mathf.Sign(boxExtents[i].x), Mathf.Sign(boxExtents[i].y));
+            Vector2 colliderPoint = boxCorner - signedExtents * height * 0.5f;
 
-            shapeCollider.SetColliderPoints(i, boxCorner + dirToCenter * height * 0.5f, boxCorner + dirToCenter * height * 0.5f + length * distToCorner.normalized);
+            Debug.DrawLine(colliderPoint, colliderPoint + length * distToCorner.normalized);
+
+            shapeCollider.SetColliderPoints(i, colliderPoint, colliderPoint + length * distToCorner.normalized);
         }
 
         shapeCollider.UpdateColliders();

@@ -1168,10 +1168,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c2bd206fe32f7443bc3b9b9ca8085d2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  jumpForce: 300
-  moveSpeed: 250
+  jumpForce: 800
+  moveSpeed: 400
   maxSlopeAngle: 45
-  movementSmoothing: 0.05
+  movementSmoothing: 0.08
   airControl: 1
   groundLayerMask:
     serializedVersion: 2

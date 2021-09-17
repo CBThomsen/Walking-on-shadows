@@ -129,7 +129,7 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
         {
             //shadowTexture[id.xy] = shadowColor;
         } else {
-                float outerRadius = 300.0;
+                float outerRadius = lightRange * 0.5;
                 float innerRadius = lightRange - outerRadius;
 
                 float constantAtt = 1.0;
@@ -141,6 +141,7 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
                 {
                     attenuation *= 1.0 - (distance - innerRadius) / outerRadius;
                 }
+
                 float4 diffuse = lights[i].color * lights[i].intensity * attenuation;
                             
                 lightTexture[id.xy] += diffuse;

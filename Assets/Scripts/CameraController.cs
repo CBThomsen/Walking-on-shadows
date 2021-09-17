@@ -7,7 +7,7 @@ public class CameraController : MonoBehaviour
     public Transform targetA;
     public Transform targetB;
 
-    void Awake()
+    void Start()
     {
         Vector3 newPos = Vector3.Lerp(transform.position, targetA.transform.position, 1f);
         newPos.z = transform.position.z;

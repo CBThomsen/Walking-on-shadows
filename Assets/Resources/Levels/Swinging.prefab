@@ -1300,17 +1300,17 @@ PrefabInstance:
     - target: {fileID: 4741154369287478111, guid: f92ce0166bd9d03429b6b966e4a33f6e,
         type: 3}
       propertyPath: color.b
-      value: 0.4669811
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4741154369287478111, guid: f92ce0166bd9d03429b6b966e4a33f6e,
         type: 3}
       propertyPath: color.g
-      value: 0.6634665
+      value: 0.95562893
       objectReference: {fileID: 0}
     - target: {fileID: 4741154369287478111, guid: f92ce0166bd9d03429b6b966e4a33f6e,
         type: 3}
       propertyPath: color.r
-      value: 1
+      value: 0.9198113
       objectReference: {fileID: 0}
     - target: {fileID: 4974312598570089518, guid: f92ce0166bd9d03429b6b966e4a33f6e,
         type: 3}

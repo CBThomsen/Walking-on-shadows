@@ -160,7 +160,10 @@ public class ShadowCollidersSimple : MonoBehaviour
             Vector2 distToCorner = boxCorner - (Vector2)light.transform.position;
             float length = Mathf.Max(light.range - distToCorner.magnitude, 0f);
 
-            shapeCollider.SetColliderPoints(i, boxCorner, boxCorner + length * distToCorner.normalized);
+            Vector2 dirToCenter = ((Vector2)box.transform.position - boxCorner).normalized;
+            float height = 0.1f;
+
+            shapeCollider.SetColliderPoints(i, boxCorner + dirToCenter * height * 0.5f, boxCorner + dirToCenter * height * 0.5f + length * distToCorner.normalized);
         }
 
         shapeCollider.UpdateColliders();

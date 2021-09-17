@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System.Linq;
+using Zenject;
 
 public class Player : MonoBehaviour
 {
@@ -12,8 +13,17 @@ public class Player : MonoBehaviour
 
     private InputReciever inputReciever;
 
-    void Start()
+    private SceneGeometry sceneGeometry;
+
+    [Inject]
+    public void Construct(SceneGeometry sceneGeometry)
     {
+        this.sceneGeometry = sceneGeometry;
+    }
+
+    void Awake()
+    {
+        this.transform.position = sceneGeometry.GetSpawnPoint();
     }
 
     void Update()
@@ -25,6 +35,9 @@ public class Player : MonoBehaviour
         {
             if (Input.GetMouseButton(0))
                 inputReciever.OnMouseDown();
+
+            if (Input.GetMouseButtonUp(0))
+                inputReciever.OnMouseUp();
 
             if (Input.GetKeyDown(KeyCode.X))
             {

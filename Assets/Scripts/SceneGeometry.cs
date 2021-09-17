@@ -45,4 +45,14 @@ public class SceneGeometry : MonoBehaviour
         return GetComponentsInChildren<Box>(true);
     }
 
+    public Vector3 GetSpawnPoint()
+    {
+        SpawnPoint spawnPoint = GetComponentInChildren<SpawnPoint>();
+
+        if (spawnPoint)
+            return spawnPoint.transform.position;
+        else
+            return new Vector3(5f, 0.5f);
+    }
+
 }

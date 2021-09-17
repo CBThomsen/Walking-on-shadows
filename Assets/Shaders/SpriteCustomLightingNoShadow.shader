@@ -83,11 +83,20 @@ Shader "Sprites/CustomLightingNoShadow"
                     
                     if(distance > lightRange)
                         continue;
-                    
+
+                    float outerRadius = lightRange * 0.5;
+                    float innerRadius = lightRange - outerRadius;
+
                     float constantAtt = 1.0;
                     float linearAtt = 0.0;
-                    float quadraticAtt = 3.0;
+                    float quadraticAtt = 1.0;
                     float attenuation = (1.0 / (constantAtt + linearAtt * distance / lightRange + quadraticAtt * ((distance/lightRange) * (distance / lightRange))));
+
+                    if(distance > innerRadius)
+                    {
+                        attenuation *= 1.0 - (distance - innerRadius) / outerRadius;
+                    }
+
                     diffuse += lights[i].color * lights[i].intensity * attenuation;
                 }
 

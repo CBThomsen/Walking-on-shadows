@@ -35,6 +35,7 @@ Shader "Sprites/CustomLightingNoShadow"
             };
 
             struct LightData {
+                float rotation;
                 float angle;
                 float range;
                 float intensity;
@@ -47,6 +48,7 @@ Shader "Sprites/CustomLightingNoShadow"
             int resolutionX;
             int resolutionY;
             float4 ambient;
+            static float PI = 3.14;
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
@@ -83,8 +85,14 @@ Shader "Sprites/CustomLightingNoShadow"
                     
                     if(distance > lightRange)
                         continue;
+        
+                    float2 lightMidVector = float2(cos(lights[i].rotation), sin(lights[i].rotation));
+                    float angleBetweenMidAndRay = acos(dot(normalize(float2(direction.x, -direction.y)), lightMidVector)) * 180.0 / PI;
 
-                    float outerRadius = lightRange * 0.5;
+                    if(angleBetweenMidAndRay >= lights[i].angle * 0.5)
+                        continue;
+
+                    float outerRadius = lightRange * 0.75;
                     float innerRadius = lightRange - outerRadius;
 
                     float constantAtt = 1.0;
@@ -100,9 +108,12 @@ Shader "Sprites/CustomLightingNoShadow"
                     diffuse += lights[i].color * lights[i].intensity * attenuation;
                 }
 
-                return col * ambient + col * diffuse;
+                float4 outputColor = col * ambient + col * diffuse;
+                outputColor.a = col.a;
+                return outputColor;
             }
             ENDCG
         }
+  
     }
 }

@@ -399,6 +399,7 @@ MonoBehaviour:
   color: {r: 0.41037738, g: 0.67350984, b: 1, a: 1}
   range: 10
   intensity: 1
+  angle: 360
 --- !u!1 &535130490563401577
 GameObject:
   m_ObjectHideFlags: 0
@@ -552,6 +553,7 @@ MonoBehaviour:
   color: {r: 0.8470972, g: 0.4198113, b: 1, a: 1}
   range: 15
   intensity: 1
+  angle: 360
 --- !u!1 &535130490638031518
 GameObject:
   m_ObjectHideFlags: 0
@@ -1871,6 +1873,7 @@ MonoBehaviour:
   color: {r: 0.41960788, g: 1, b: 0.6846816, a: 1}
   range: 15
   intensity: 1
+  angle: 360
 --- !u!1 &3437494990319213913
 GameObject:
   m_ObjectHideFlags: 0
@@ -2353,6 +2356,7 @@ MonoBehaviour:
   color: {r: 0.41960788, g: 1, b: 0.6846816, a: 1}
   range: 15
   intensity: 1
+  angle: 360
 --- !u!1 &6129940328395828912
 GameObject:
   m_ObjectHideFlags: 0

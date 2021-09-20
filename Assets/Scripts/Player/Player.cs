@@ -15,6 +15,8 @@ public class Player : MonoBehaviour
 
     private SceneGeometry sceneGeometry;
 
+    private Light carryingLight = null;
+
     [Inject]
     public void Construct(SceneGeometry sceneGeometry)
     {
@@ -34,7 +36,7 @@ public class Player : MonoBehaviour
     void Update()
     {
         if (Input.GetMouseButtonDown(0))
-            inputReciever = FindOverlappingComponent<InputReciever>();
+            inputReciever = FindOverlappingComponentAtMouse<InputReciever>();
 
         if (inputReciever != null)
         {
@@ -43,14 +45,36 @@ public class Player : MonoBehaviour
 
             if (Input.GetMouseButtonUp(0))
                 inputReciever.OnMouseUp();
+        }
 
-            if (Input.GetKeyDown(KeyCode.X))
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            Light light = FindOverlappingComponentAtPosition<Light>(transform.position);
+
+            Debug.Log("Carrying? " + carryingLight + ", light = " + light);
+            if (carryingLight == null)
             {
-                Light light = FindOverlappingComponent<Light>();
-
                 if (light)
-                    light.ToggleOnOff();
+                {
+                    light.PickUp(transform);
+                    carryingLight = light;
+                    Debug.Log("Picked up!");
+                }
             }
+            else
+            {
+                carryingLight.Drop();
+                carryingLight = null;
+            }
+        }
+
+        if (carryingLight != null)
+        {
+            Vector3 mousePos = Input.mousePosition;
+            mousePos.z = -Camera.main.transform.position.z;
+            Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(mousePos);
+            Vector3 lookDir = transform.position - mouseWorldPos;
+            carryingLight.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(lookDir.y, lookDir.x) * 180f / Mathf.PI);
         }
 
         playerInputReciever.OnHorizontalKeyDown(Input.GetAxisRaw("Horizontal"));
@@ -62,13 +86,29 @@ public class Player : MonoBehaviour
         }
     }
 
-    private T FindOverlappingComponent<T>()
+    private T FindOverlappingComponentAtMouse<T>()
     {
         Vector3 mousePos = Input.mousePosition;
         mousePos.z = -Camera.main.transform.position.z;
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(mousePos);
 
         Collider2D[] overlappingColliders = Physics2D.OverlapCircleAll(mouseWorldPos, 0.5f);
+        T component;
+
+        for (var i = 0; i < overlappingColliders.Length; i++)
+        {
+            component = overlappingColliders[i].GetComponent<T>();
+
+            if (component != null)
+                return component;
+        }
+
+        return default(T);
+    }
+
+    private T FindOverlappingComponentAtPosition<T>(Vector2 position)
+    {
+        Collider2D[] overlappingColliders = Physics2D.OverlapCircleAll(position, 1f);
         T component;
 
         for (var i = 0; i < overlappingColliders.Length; i++)

@@ -117,21 +117,6 @@ public class ShadowCollidersSimple : MonoBehaviour
     {
         Camera.onPostRender += OnPostRender;
         shapeColliders = new List<ShapeCollider>();
-
-        lights = sceneGeometry.GetLights();
-        boxes = sceneGeometry.GetBoxes();
-
-        int shapeIndex = 0;
-
-        for (var i = 0; i < lights.Length; i++)
-        {
-            for (var j = 0; j < boxes.Length; j++)
-            {
-                ShapeCollider col = new ShapeCollider(gameObject);
-                shapeColliders.Add(col);
-                shapeIndex += 1;
-            }
-        }
     }
 
     private void OnDestroy()
@@ -149,6 +134,12 @@ public class ShadowCollidersSimple : MonoBehaviour
         {
             for (var j = 0; j < boxes.Length; j++)
             {
+                if (shapeColliders.Count <= shapeIndex)
+                {
+                    ShapeCollider col = new ShapeCollider(gameObject);
+                    shapeColliders.Add(col);
+                }
+
                 UpdateBoxShadowCollider(shapeColliders[shapeIndex], lights[i], boxes[j]);
                 shapeColliders[shapeIndex].SetEnabled(lights[i].gameObject.activeInHierarchy);
                 shapeIndex += 1;

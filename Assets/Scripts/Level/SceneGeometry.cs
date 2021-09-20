@@ -17,6 +17,7 @@ public struct BoxData
 
 public struct LightData
 {
+    public float rotation;
     public float angle;
     public float range;
     public float intensity;

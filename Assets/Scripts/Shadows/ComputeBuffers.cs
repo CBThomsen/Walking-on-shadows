@@ -47,7 +47,7 @@ public class ComputeBuffers : ITickable
                 lightBuffer.Release();
 
             lightDataArray = new LightData[lights.Length];
-            lightBuffer = new ComputeBuffer(lightDataArray.Length, 9 * sizeof(float) + sizeof(int));
+            lightBuffer = new ComputeBuffer(lightDataArray.Length, 10 * sizeof(float) + sizeof(int));
         }
 
         boxes = sceneGeometry.GetBoxes();

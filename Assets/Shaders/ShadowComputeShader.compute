@@ -1,6 +1,7 @@
 ﻿#pragma kernel ShadowComputeShader
 
 struct LightData {
+    float rotation;
     float angle;
     float range;
     float intensity;
@@ -39,7 +40,7 @@ float4 shadowColor;
 int2 resolution;
 
 static float EPSILON = 0.00001;
-static float PI = 3.14;
+static float PI = 3.14159265359;
 
 int TestRaySphere(float2 p, float2 dir, float2 center, float radius)
 {
@@ -105,8 +106,11 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
         if(distance > lightRange)
             continue;
         
-        //float lightAngle = lights[i].angle;
-        //float angle = fmod(atan2(direction.y, -direction.x) + lightAngle + 2 * PI, 2 * PI);
+        float2 lightMidVector = float2(cos(lights[i].rotation), sin(lights[i].rotation));
+        float angleBetweenMidAndRay = acos(dot(normalize(direction), lightMidVector)) * 180.0 / PI;
+
+        if(angleBetweenMidAndRay >= lights[i].angle * (0.5 + EPSILON))
+            continue;
 
         for(int j = 0; j < circles.Length; j++)
         {
@@ -129,7 +133,7 @@ void ShadowComputeShader (uint3 id : SV_DispatchThreadID)
         {
             //shadowTexture[id.xy] = shadowColor;
         } else {
-                float outerRadius = lightRange * 0.5;
+                float outerRadius = lightRange * 1.0;
                 float innerRadius = lightRange - outerRadius;
 
                 float constantAtt = 1.0;

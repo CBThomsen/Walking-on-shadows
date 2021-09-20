@@ -153,3 +153,4 @@ MonoBehaviour:
   color: {r: 1, g: 1, b: 1, a: 1}
   range: 15
   intensity: 1
+  angle: 360

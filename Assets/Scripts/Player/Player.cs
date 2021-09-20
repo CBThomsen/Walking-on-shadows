@@ -23,6 +23,11 @@ public class Player : MonoBehaviour
 
     void Awake()
     {
+        Spawn();
+    }
+
+    private void Spawn()
+    {
         this.transform.position = sceneGeometry.GetSpawnPoint();
     }
 
@@ -75,5 +80,13 @@ public class Player : MonoBehaviour
         }
 
         return default(T);
+    }
+
+    private void OnCollisionEnter2D(Collision2D col)
+    {
+        if (col.collider.gameObject.tag == "Enemy")
+        {
+            Spawn();
+        }
     }
 }

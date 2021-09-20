@@ -115,6 +115,7 @@ public class ShadowCollidersSimple : MonoBehaviour
 
     private void Start()
     {
+        Camera.onPostRender += OnPostRender;
         shapeColliders = new List<ShapeCollider>();
 
         lights = sceneGeometry.GetLights();
@@ -133,7 +134,12 @@ public class ShadowCollidersSimple : MonoBehaviour
         }
     }
 
-    private void FixedUpdate()
+    private void OnDestroy()
+    {
+        Camera.onPostRender -= OnPostRender;
+    }
+
+    private void OnPostRender(Camera cam)
     {
         lights = sceneGeometry.GetLights();
         boxes = sceneGeometry.GetBoxes();
@@ -163,8 +169,6 @@ public class ShadowCollidersSimple : MonoBehaviour
             float height = 0.1f;
             Vector2 signedExtents = new Vector2(Mathf.Sign(boxExtents[i].x), Mathf.Sign(boxExtents[i].y));
             Vector2 colliderPoint = boxCorner - signedExtents * height * 0.5f;
-
-            Debug.DrawLine(colliderPoint, colliderPoint + length * distToCorner.normalized);
 
             shapeCollider.SetColliderPoints(i, colliderPoint, colliderPoint + length * distToCorner.normalized);
         }

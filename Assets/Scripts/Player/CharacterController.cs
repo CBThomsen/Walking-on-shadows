@@ -65,6 +65,28 @@ public class CharacterController : InputReciever
 
         if (grounded)
             slopeAngle = newSlopeAngle;
+
+        ContactPoint2D[] contacts = new ContactPoint2D[10];
+        int count = body.GetContacts(contacts);
+
+        float maxAngleBetweenNormals = 0f;
+
+        for (var i = 0; i < count; i++)
+        {
+            for (var j = 0; j < count; j++)
+            {
+                float dot = Vector2.Dot(contacts[i].normal, contacts[j].normal);
+                float angle = Mathf.Acos(dot);
+
+                if (Mathf.Abs(angle) > maxAngleBetweenNormals)
+                    maxAngleBetweenNormals = Mathf.Abs(angle);
+            }
+        }
+
+        if (maxAngleBetweenNormals * 180f / Mathf.PI > 165f)
+        {
+            gameObject.SetActive(false);
+        }
     }
 
     public override void OnHorizontalKeyDown(float horizontal)

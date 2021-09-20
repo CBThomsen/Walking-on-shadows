@@ -16,6 +16,14 @@ public class LevelSelect : MonoBehaviour
 
     void Start()
     {
+        //Auto loads last level if set
+        string lastLevel = PlayerPrefs.GetString("LastLevel");
+        if (lastLevel != "")
+        {
+            OnClickedLevelButton(lastLevel);
+            return;
+        }
+
         string[] files = Directory.GetFiles(levelResourcePath);
 
         for (var i = 0; i < files.Length; i++)
@@ -43,5 +51,6 @@ public class LevelSelect : MonoBehaviour
     {
         CoreInstaller.levelName = levelName;
         SceneManager.LoadSceneAsync("Core", LoadSceneMode.Single);
+        PlayerPrefs.SetString("LastLevel", levelName);
     }
 }

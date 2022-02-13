@@ -151,6 +151,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   color: {r: 1, g: 1, b: 1, a: 1}
-  range: 15
+  maxRange: 10
   intensity: 1
   angle: 360
+  range: 15

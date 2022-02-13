@@ -36,6 +36,12 @@ public struct EdgeVertex
 public class SceneGeometry : MonoBehaviour
 {
 
+    private void Start()
+    {
+        foreach (Light light in GetLights())
+            StartCoroutine(light.Spawn());
+    }
+
     public Light[] GetLights()
     {
         return GetComponentsInChildren<Light>(true);

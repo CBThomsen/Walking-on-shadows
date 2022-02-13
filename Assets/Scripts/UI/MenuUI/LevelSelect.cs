@@ -51,6 +51,6 @@ public class LevelSelect : MonoBehaviour
     {
         CoreInstaller.levelName = levelName;
         SceneManager.LoadSceneAsync("Core", LoadSceneMode.Single);
-        PlayerPrefs.SetString("LastLevel", levelName);
+        //PlayerPrefs.SetString("LastLevel", levelName);
     }
 }

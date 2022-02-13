@@ -7,15 +7,19 @@ public class LightSystem : MonoBehaviour
 {
     public Material spriteLitMaterial;
     public Material spriteLitMaterialNoShadow;
+    public GameObject lightPrefab;
 
     public ComputeBuffers computeBuffers;
     public ShadowRenderer shadowRenderer;
     public Color ambientColor;
 
+    private SceneGeometry sceneGeometry;
+
     [Inject]
-    public void Construct(ComputeBuffers computeBuffers)
+    public void Construct(ComputeBuffers computeBuffers, SceneGeometry sceneGeometry)
     {
         this.computeBuffers = computeBuffers;
+        this.sceneGeometry = sceneGeometry;
     }
 
     void Start()
@@ -34,5 +38,16 @@ public class LightSystem : MonoBehaviour
         spriteLitMaterial.SetVector("ambient", ambientColor);
         spriteLitMaterialNoShadow.SetVector("ambient", ambientColor);
         spriteLitMaterialNoShadow.SetBuffer("lights", computeBuffers.GetLightBuffer());
+    }
+
+    public Light SpawnLight(Vector3 position)
+    {
+        GameObject obj = GameObject.Instantiate(lightPrefab, position, Quaternion.identity);
+        obj.transform.SetParent(sceneGeometry.transform);
+        Light light = obj.GetComponent<Light>();
+
+        StartCoroutine(light.Spawn());
+
+        return light;
     }
 }

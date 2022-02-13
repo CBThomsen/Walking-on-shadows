@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
 using Zenject;
 
 public class Player : MonoBehaviour
@@ -17,19 +19,28 @@ public class Player : MonoBehaviour
 
     private Light carryingLight = null;
 
+    private LightSystem lightSystem;
+
+    private Light lastSpawnedLight;
+    private List<Light> spanwedLights;
+    private int maxLights = 1;
+
     [Inject]
-    public void Construct(SceneGeometry sceneGeometry)
+    public void Construct(SceneGeometry sceneGeometry, LightSystem lightSystem)
     {
         this.sceneGeometry = sceneGeometry;
+        this.lightSystem = lightSystem;
     }
 
     void Awake()
     {
+        spanwedLights = new List<Light>();
         Spawn();
     }
 
     private void Spawn()
     {
+        spanwedLights.ForEach(l => Destroy(l.gameObject));
         this.transform.position = sceneGeometry.GetSpawnPoint();
     }
 
@@ -46,19 +57,43 @@ public class Player : MonoBehaviour
             if (Input.GetMouseButtonUp(0))
                 inputReciever.OnMouseUp();
         }
+        else
+        {
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (spanwedLights.Count >= maxLights)
+                {
+                    Light lightToDespawn = spanwedLights[0];
+                    StartCoroutine(lightToDespawn.Despawn());
+                    spanwedLights.RemoveAt(0);
+                }
+
+                lastSpawnedLight = lightSystem.SpawnLight(SpaceConverter.MouseToWorldPosition(Input.mousePosition));
+                lastSpawnedLight.SetCollidersEnabled(false);
+            }
+
+            if (Input.GetMouseButton(0))
+            {
+                lastSpawnedLight.transform.position = SpaceConverter.MouseToWorldPosition(Input.mousePosition);
+            }
+
+            if (Input.GetMouseButtonUp(0))
+            {
+                lastSpawnedLight.SetCollidersEnabled(true);
+                spanwedLights.Add(lastSpawnedLight);
+            }
+        }
 
         if (Input.GetKeyDown(KeyCode.X))
         {
             Light light = FindOverlappingComponentAtPosition<Light>(transform.position);
-
-            Debug.Log("Carrying? " + carryingLight + ", light = " + light);
             if (carryingLight == null)
             {
                 if (light)
                 {
                     light.PickUp(transform);
                     carryingLight = light;
-                    Debug.Log("Picked up!");
                 }
             }
             else
@@ -70,10 +105,7 @@ public class Player : MonoBehaviour
 
         if (carryingLight != null)
         {
-            Vector3 mousePos = Input.mousePosition;
-            mousePos.z = -Camera.main.transform.position.z;
-            Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(mousePos);
-            Vector3 lookDir = transform.position - mouseWorldPos;
+            Vector3 lookDir = transform.position - SpaceConverter.MouseToWorldPosition(Input.mousePosition);
             carryingLight.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(lookDir.y, lookDir.x) * 180f / Mathf.PI);
         }
 

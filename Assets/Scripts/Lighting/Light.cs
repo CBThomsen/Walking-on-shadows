@@ -18,8 +18,13 @@ public class Light : MonoBehaviour
 
     private LightData data = new LightData();
 
+    private float currentIntensity;
+
     private Transform followTarget;
     private Rigidbody2D body;
+
+    private bool collidersEnabled = true;
+    public bool renderingEnabled = true;
 
     private void Start()
     {
@@ -33,10 +38,20 @@ public class Light : MonoBehaviour
         data.position = SpaceConverter.WorldToTextureSpace(transform.position);
         data.range = range * SpaceConverter.WorldToTextureScaleFactor().x;
         data.color = (Vector4)color;
-        data.intensity = intensity;
-        data.isOn = (gameObject.activeInHierarchy) ? 1 : 0;
+        data.intensity = currentIntensity;
+        data.isOn = renderingEnabled ? 1 : 0;
 
         return data;
+    }
+
+    public bool GetCollidersEnabled()
+    {
+        return collidersEnabled;
+    }
+
+    public void SetCollidersEnabled(bool enabled)
+    {
+        collidersEnabled = enabled;
     }
 
     public void PickUp(Transform followTarget)
@@ -52,9 +67,28 @@ public class Light : MonoBehaviour
         body.simulated = true;
     }
 
-    public void ToggleOnOff()
+    public IEnumerator Spawn()
     {
-        gameObject.SetActive(!gameObject.activeInHierarchy);
+        transform.localScale = Vector3.zero;
+
+        while (currentIntensity < intensity - 0.01f)
+        {
+            currentIntensity = Mathf.Lerp(currentIntensity, intensity, 0.05f);
+            transform.localScale = Vector3.Lerp(transform.localScale, Vector3.one, 0.05f);
+            yield return new WaitForEndOfFrame();
+        }
+    }
+
+    public IEnumerator Despawn()
+    {
+        while (currentIntensity > 0.01f)
+        {
+            currentIntensity = Mathf.Lerp(currentIntensity, 0f, 0.1f);
+            transform.localScale = Vector3.Lerp(transform.localScale, Vector3.zero, 0.05f);
+            yield return new WaitForEndOfFrame();
+        }
+
+        Destroy(gameObject);
     }
 
     public void OnDrawGizmos()
@@ -73,4 +107,7 @@ public class Light : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+    }
 }

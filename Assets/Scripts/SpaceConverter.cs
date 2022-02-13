@@ -32,5 +32,11 @@ public class SpaceConverter : MonoBehaviour
         return result;
     }
 
+    public static Vector3 MouseToWorldPosition(Vector3 mousePosition)
+    {
+        mousePosition.z = -Camera.main.transform.position.z;
+        return Camera.main.ScreenToWorldPoint(mousePosition);
+    }
+
 
 }

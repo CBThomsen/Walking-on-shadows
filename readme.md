@@ -11,4 +11,4 @@ Features a custom 2D light and shadow system.
 
 ### Spawning lights ###
 
-![](https://github.com/CBThomsen/Walking-on-shadows/blob/main/walkingonshadows_spawnlights.mp4)
+![](walkingonshadows_spawnlights.mp4)

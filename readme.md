@@ -7,8 +7,8 @@ Features a custom 2D light and shadow system.
 
 ### Moving lights ####
 
-![](https://github.com/Your_Repository_Name/walkingonshadows_level.gif)
+![](https://github.com/CBThomsen/Walking-on-shadows/blob/main/walkingonshadows_level.mp4)
 
 ### Spawning lights ###
 
-![](https://github.com/Your_Repository_Name/walkingonshadows_spawnlights.gif)
+![](https://github.com/CBThomsen/Walking-on-shadows/blob/main/walkingonshadows_spawnlights.mp4)

@@ -1,7 +1,8 @@
 # Walking on Shadows ###
 
 Work in progress game concept where the shadows are solid and walkable.
-The player can move lights to clear their path through the levels. Remake of an old Flash game I did: (https://youtube.com/watch?v=37PAbLMYjGs)
+The player can move lights to clear their path through the levels. Remake of a Flash game I did: (https://youtube.com/watch?v=37PAbLMYjGs)
+
 
 Features a custom 2D light and shadow system.
 
